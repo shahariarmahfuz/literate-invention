@@ -471,6 +471,26 @@ def admin_site_status():
         last_update=now.strftime('%H:%M')
     )
 
+@app.route('/admin/audit-log')
+@login_required
+def admin_audit_log():
+    if current_user.role != 'admin': return redirect(url_for('index'))
+    return render_template('admin_audit_log.html')
+
+@app.route('/admin/settings')
+@login_required
+def admin_settings():
+    if current_user.role != 'admin': return redirect(url_for('index'))
+    return render_template('admin_settings.html')
+
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
+
+@app.route('/terms')
+def terms():
+    return render_template('terms.html')
+
 # --- ✅ ADMIN REPORT ROUTES ---
 
 @app.route('/admin/reports/posts')
