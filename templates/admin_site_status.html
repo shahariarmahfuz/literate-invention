@@ -1,0 +1,128 @@
+{% extends "base_admin.html" %}
+{% block content %}
+<style>
+    .status-hero { background: #0f172a; color: #f8fafc; border-radius: 18px; padding: 28px; }
+    .status-label { text-transform: uppercase; letter-spacing: 0.2em; font-size: 11px; color: #94a3b8; }
+    .status-chip { background: rgba(255, 255, 255, 0.08); color: #e2e8f0; border-radius: 999px; padding: 6px 12px; font-size: 13px; }
+    .metric-card { border-radius: 16px; border: 1px solid #e2e8f0; }
+    .metric-value { font-size: 28px; font-weight: 700; color: #0f172a; }
+    .metric-label { color: #64748b; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; }
+    .detail-card { border-radius: 16px; border: 1px solid #e2e8f0; padding: 16px; background: #fff; height: 100%; }
+    .detail-title { font-weight: 600; font-size: 14px; color: #0f172a; }
+    .detail-meta { color: #94a3b8; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+</style>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1">Site status</h2>
+        <p class="text-muted mb-0">Status of Web</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <div class="text-end">
+            <div class="text-muted small">Language</div>
+            <select class="form-select form-select-sm">
+                <option selected>English (demo)</option>
+                <option>বাংলা (demo)</option>
+                <option>Español (demo)</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<div class="status-hero mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-start">
+        <div>
+            <div class="status-label">Writo</div>
+            <h3 class="mt-2 mb-2">Status of Web</h3>
+            <p class="mb-3">Website performance overview, total views, traffic signals and system status.</p>
+            <div class="d-flex flex-wrap gap-2">
+                <span class="status-chip">Online</span>
+                <span class="status-chip">Medium load</span>
+                <span class="status-chip">Low errors</span>
+            </div>
+        </div>
+        <div class="text-end">
+            <div class="status-label">Last Update</div>
+            <div class="fs-3 fw-semibold mt-2">{{ last_update }}</div>
+            <button class="btn btn-sm btn-light mt-3">Toggle details</button>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card metric-card p-3 h-100">
+            <div class="metric-value">{{ total_views }}</div>
+            <div class="metric-label">Total views</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card metric-card p-3 h-100">
+            <div class="metric-value">{{ unique_visitors }}</div>
+            <div class="metric-label">Unique visitors</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card metric-card p-3 h-100">
+            <div class="metric-value">{{ published_posts }}</div>
+            <div class="metric-label">Published posts</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card metric-card p-3 h-100">
+            <div class="metric-value">{{ engagement_rate }}</div>
+            <div class="metric-label">Engagement rate</div>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0">Details</h5>
+    <button class="btn btn-outline-secondary btn-sm">Toggle details</button>
+</div>
+
+<div class="row g-3">
+    <div class="col-12 col-lg-6">
+        <div class="detail-card">
+            <div class="detail-meta">Last 24h</div>
+            <div class="detail-title">{{ views_last_24h }} views</div>
+            <p class="text-muted mb-0">Traffic in the last 24 hours.</p>
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
+        <div class="detail-card">
+            <div class="detail-meta">Top page</div>
+            <div class="detail-title">{{ top_page }}</div>
+            <p class="text-muted mb-0">Most visited content today.</p>
+        </div>
+    </div>
+    <div class="col-12 col-lg-4">
+        <div class="detail-card">
+            <div class="detail-meta">Avg time on site</div>
+            <div class="detail-title">{{ avg_time_display }}</div>
+            <p class="text-muted mb-0">Average session duration.</p>
+        </div>
+    </div>
+    <div class="col-12 col-lg-4">
+        <div class="detail-card">
+            <div class="detail-meta">Bounce rate</div>
+            <div class="detail-title">{{ bounce_rate }}</div>
+            <p class="text-muted mb-0">High bounce may indicate slow UI or poor targeting.</p>
+        </div>
+    </div>
+    <div class="col-12 col-lg-4">
+        <div class="detail-card">
+            <div class="detail-meta">Errors (today)</div>
+            <div class="detail-title">{{ errors_today }}</div>
+            <p class="text-muted mb-0">Server/app errors counted today.</p>
+        </div>
+    </div>
+    <div class="col-12">
+        <div class="detail-card">
+            <div class="detail-meta">Uptime</div>
+            <div class="detail-title">{{ uptime_percent }}</div>
+            <p class="text-muted mb-0">Service uptime since last restart: {{ uptime_seconds }}s.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

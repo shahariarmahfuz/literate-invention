@@ -34,6 +34,7 @@
             <li class="nav-item"><a href="{{ url_for('admin_comment_reports') }}" class="nav-link {{ 'active' if request.endpoint == 'admin_comment_reports' else '' }}"><i data-lucide="message-square-warning"></i> Comment Reports</a></li>
 
             <div class="section-header">System</div>
+            <li class="nav-item"><a href="{{ url_for('admin_site_status') }}" class="nav-link {{ 'active' if request.endpoint == 'admin_site_status' else '' }}"><i data-lucide="activity"></i> Site Status</a></li>
             <li class="nav-item"><a href="/" class="nav-link"><i data-lucide="home"></i> View Website</a></li>
             <li class="nav-item"><a href="{{ url_for('logout') }}" class="nav-link text-danger"><i data-lucide="log-out"></i> Logout</a></li>
         </ul>

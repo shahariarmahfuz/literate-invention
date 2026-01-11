@@ -1,11 +1,13 @@
 import os
+import hashlib
+from collections import defaultdict
 from flask import Flask, render_template, redirect, url_for, request, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from sqlalchemy import func, desc
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # --- CONFIGURATION ---
 app = Flask(__name__)
@@ -21,6 +23,7 @@ db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+app_start_time = datetime.utcnow()
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
@@ -103,6 +106,19 @@ class Comment(db.Model):
     # Reports relation
     reports = db.relationship('CommentReport', backref='comment', cascade="all, delete", lazy=True)
 
+class PageView(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    path = db.Column(db.String(200), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    visitor_id = db.Column(db.String(64), nullable=False)
+
+class ErrorLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    path = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.String(300), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -115,6 +131,49 @@ def inject_layout():
     if current_user.role == 'writer': return dict(layout='base_writer.html')
     elif current_user.role == 'admin': return dict(layout='base_admin.html')
     else: return dict(layout='base_user.html')
+
+def _should_track_view():
+    if request.method != 'GET':
+        return False
+    if request.path.startswith('/static'):
+        return False
+    if request.path.startswith('/admin'):
+        return False
+    if request.path.startswith('/api'):
+        return False
+    return True
+
+def _build_visitor_id():
+    if current_user.is_authenticated:
+        return f'user-{current_user.id}'
+    raw = f"{request.remote_addr}-{request.headers.get('User-Agent', '')}"
+    return hashlib.sha256(raw.encode('utf-8')).hexdigest()
+
+@app.before_request
+def track_page_view():
+    if not _should_track_view():
+        return
+    try:
+        view = PageView(
+            path=request.path,
+            user_id=current_user.id if current_user.is_authenticated else None,
+            visitor_id=_build_visitor_id()
+        )
+        db.session.add(view)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+@app.teardown_request
+def log_server_error(exception=None):
+    if exception is None:
+        return
+    try:
+        error = ErrorLog(path=request.path, message=str(exception)[:300])
+        db.session.add(error)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
 # --- API ROUTES ---
 @app.route('/api/search')
@@ -338,6 +397,66 @@ def admin_users():
     elif filter_type == 'active': query = query.filter_by(is_suspended=False)
     users = query.order_by(User.id.desc()).all()
     return render_template('admin_users.html', users=users, filter_type=filter_type, search_query=search_query)
+
+@app.route('/admin/site-status')
+@login_required
+def admin_site_status():
+    if current_user.role != 'admin': return redirect(url_for('index'))
+    now = datetime.utcnow()
+    last_24h = now - timedelta(hours=24)
+    total_views = PageView.query.count()
+    unique_visitors = db.session.query(PageView.visitor_id).distinct().count()
+    published_posts = BlogPost.query.filter_by(status='active').count()
+    total_post_likes = db.session.query(post_likes).count()
+    engagement_rate = (total_post_likes / total_views * 100) if total_views else 0
+
+    views_last_24h = PageView.query.filter(PageView.created_at >= last_24h).count()
+    top_page_row = db.session.query(PageView.path, func.count(PageView.id).label('view_count'))\
+        .filter(PageView.created_at >= last_24h)\
+        .group_by(PageView.path).order_by(desc('view_count')).first()
+    top_page = top_page_row.path if top_page_row else 'No traffic yet'
+
+    recent_views = PageView.query.filter(PageView.created_at >= last_24h).all()
+    visitor_times = defaultdict(list)
+    for view in recent_views:
+        visitor_times[view.visitor_id].append(view.created_at)
+    session_durations = []
+    bounce_visitors = 0
+    for times in visitor_times.values():
+        if len(times) == 1:
+            bounce_visitors += 1
+            continue
+        session_durations.append((max(times) - min(times)).total_seconds())
+    avg_time_seconds = int(sum(session_durations) / len(session_durations)) if session_durations else 0
+    avg_minutes, avg_seconds = divmod(avg_time_seconds, 60)
+    avg_hours, avg_minutes = divmod(avg_minutes, 60)
+    if avg_hours:
+        avg_time_display = f"{avg_hours}h {avg_minutes}m"
+    elif avg_minutes:
+        avg_time_display = f"{avg_minutes}m {avg_seconds}s"
+    else:
+        avg_time_display = f"{avg_seconds}s"
+    bounce_rate = (bounce_visitors / len(visitor_times) * 100) if visitor_times else 0
+
+    errors_today = ErrorLog.query.filter(ErrorLog.created_at >= now.replace(hour=0, minute=0, second=0, microsecond=0)).count()
+    uptime_seconds = int((now - app_start_time).total_seconds())
+    uptime_percent = 100.0
+
+    return render_template(
+        'admin_site_status.html',
+        total_views=f"{total_views:,}",
+        unique_visitors=f"{unique_visitors:,}",
+        published_posts=f"{published_posts:,}",
+        engagement_rate=f"{engagement_rate:.1f}%",
+        views_last_24h=f"{views_last_24h:,}",
+        top_page=top_page,
+        avg_time_display=avg_time_display,
+        bounce_rate=f"{bounce_rate:.1f}%",
+        errors_today=f"{errors_today:,}",
+        uptime_percent=f"{uptime_percent:.2f}%",
+        uptime_seconds=uptime_seconds,
+        last_update=now.strftime('%H:%M')
+    )
 
 # --- ✅ ADMIN REPORT ROUTES ---
 
