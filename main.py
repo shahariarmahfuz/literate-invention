@@ -1,5 +1,7 @@
 import os
 import hashlib
+import math
+import re
 from collections import defaultdict
 from flask import Flask, render_template, redirect, url_for, request, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -149,6 +151,14 @@ def _build_visitor_id():
     raw = f"{request.remote_addr}-{request.headers.get('User-Agent', '')}"
     return hashlib.sha256(raw.encode('utf-8')).hexdigest()
 
+def estimate_reading_time(content, words_per_minute=200):
+    if not content:
+        return 1
+    text = re.sub(r'<[^>]+>', ' ', content)
+    words = re.findall(r'\b\w+\b', text)
+    minutes = math.ceil(len(words) / words_per_minute)
+    return max(1, minutes)
+
 @app.before_request
 def track_page_view():
     if not _should_track_view():
@@ -282,7 +292,8 @@ def post_detail(post_id):
         if not current_user.is_authenticated or (current_user.role != 'admin' and current_user.id != post.author_id):
             flash('This post is not available.', 'warning')
             return redirect(url_for('index'))
-    return render_template('post_detail.html', post=post)
+    reading_time_minutes = estimate_reading_time(post.content)
+    return render_template('post_detail.html', post=post, reading_time_minutes=reading_time_minutes)
 
 @app.route('/u/<username>')
 def public_profile(username):

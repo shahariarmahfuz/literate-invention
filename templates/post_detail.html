@@ -14,6 +14,9 @@
                         • {{ post.date_posted.strftime('%d %B, %Y') }}
                     </small>
                 </div>
+                <div class="text-muted small">
+                    Estimated Reading Time: {{ reading_time_minutes }} min
+                </div>
 
                 <div class="d-flex gap-2">
                     {% if current_user.is_authenticated %}
