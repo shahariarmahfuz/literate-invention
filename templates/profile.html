@@ -1,0 +1,52 @@
+{% extends layout %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">My Profile</div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <img src="{{ url_for('static', filename='uploads/' + current_user.profile_pic) }}" class="rounded-circle mb-2" style="width: 120px; height: 120px; object-fit: cover;">
+                    <h3>{{ current_user.name or current_user.username }}</h3>
+                    <p class="text-muted">{{ current_user.role|upper }}</p>
+                </div>
+
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label>Display Name</label>
+                            <input type="text" name="name" class="form-control" value="{{ current_user.name or '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label>Profile Picture</label>
+                            <input type="file" name="profile_pic" class="form-control">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label>Bio</label>
+                        <textarea name="bio" class="form-control" rows="3">{{ current_user.bio or '' }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label>Hobbies</label>
+                        <input type="text" name="hobbies" class="form-control" value="{{ current_user.hobbies or '' }}">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update Profile</button>
+                </form>
+
+                <hr>
+                {% if current_user.role == 'user' %}
+                    <div class="text-center mt-4">
+                        {% if current_user.is_writer_applicant %}
+                            <button class="btn btn-secondary" disabled>Writer Application Pending...</button>
+                        {% else %}
+                            <h5>Want to write articles?</h5>
+                            <a href="/apply-writer" class="btn btn-outline-success">Request to become a Writer</a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

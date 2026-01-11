@@ -1,0 +1,53 @@
+{% extends "base_admin.html" %}
+{% block content %}
+<h2 class="mb-4">Admin Dashboard</h2>
+
+<div class="card mb-4">
+    <div class="card-header bg-info text-white">Writer Applications</div>
+    <div class="card-body">
+        {% if writer_applicants %}
+            <table class="table">
+                {% for user in writer_applicants %}
+                <tr>
+                    <td>
+                        <img src="{{ url_for('static', filename='uploads/' + user.profile_pic) }}" width="40" class="rounded-circle me-2">
+                        {{ user.username }} ({{ user.name }})
+                    </td>
+                    <td><a href="/approve-writer/{{ user.id }}" class="btn btn-sm btn-success">Approve</a></td>
+                </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p class="text-muted">No new requests.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card border-warning">
+    <div class="card-header bg-warning">Pending Posts for Review</div>
+    <div class="card-body">
+        {% if pending_posts %}
+            <table class="table">
+                <thead>
+                    <tr><th>Title</th><th>Author</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                {% for post in pending_posts %}
+                <tr>
+                    <td>{{ post.title }}</td>
+                    <td>{{ post.author.username }}</td>
+                    <td>
+                        <a href="/post/{{ post.id }}" target="_blank" class="btn btn-primary btn-sm">View</a>
+                        <a href="/approve/{{ post.id }}" class="btn btn-success btn-sm">Accept</a>
+                        <a href="/reject/{{ post.id }}" class="btn btn-danger btn-sm">Reject</a>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="text-muted">No posts to review.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

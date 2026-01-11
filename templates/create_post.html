@@ -1,0 +1,290 @@
+{% extends layout %}
+
+{% block content %}
+
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<div id="add-post-ui">
+<style>
+    /* Scoped CSS for Add Post Page */
+    #add-post-ui {
+        font-family: 'Outfit', sans-serif;
+        --bg: #f1f5f9;
+        --text: #0f172a;
+        --muted: #64748b;
+        --card: #ffffff;
+        --border: #eef0f6;
+        --softBorder: #e2e8f0;
+        --overlay: rgba(0,0,0,0.18);
+    }
+    body[data-theme="dark"] #add-post-ui {
+        --bg: #0A0A0A;
+        --text: #e5e7eb;
+        --muted: #a1a1aa;
+        --card: rgba(255,255,255,0.06);
+        --border: rgba(255,255,255,0.10);
+        --softBorder: rgba(255,255,255,0.12);
+        --overlay: rgba(0,0,0,0.35);
+    }
+
+    #add-post-ui .wrap { max-width: 600px; margin: 0 auto; padding: 10px 0; }
+
+    #add-post-ui .panel {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        box-shadow: 0 6px 18px rgba(16,24,40,.04);
+        overflow: hidden;
+        margin-top: 10px;
+    }
+
+    #add-post-ui .panelHead {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+        display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        background: rgba(255,255,255,0.20); flex-wrap: wrap;
+    }
+    body[data-theme="dark"] #add-post-ui .panelHead { background: rgba(255,255,255,0.04); }
+
+    #add-post-ui .panelTitle {
+        display: flex; align-items: center; gap: 10px;
+        font-size: 14px; font-weight: 700; /* Bold */
+        letter-spacing: .15px; color: var(--text);
+    }
+    #add-post-ui .panelTitle svg { width: 18px; height: 18px; }
+
+    #add-post-ui .btnRow { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+
+    #add-post-ui .w-btn {
+        height: 34px; padding: 0 14px; border-radius: 999px;
+        border: 1px solid var(--softBorder);
+        background: rgba(255,255,255,0.35);
+        color: var(--text); font-size: 12px; font-weight: 600; /* Semi-Bold */
+        cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+        user-select: none; text-decoration: none; transition: 0.1s;
+    }
+    body[data-theme="dark"] #add-post-ui .w-btn { background: rgba(255,255,255,0.06); }
+    #add-post-ui .w-btn:active { transform: scale(.98); }
+    #add-post-ui .w-btn:hover { background: rgba(15,23,42,0.05); }
+
+    #add-post-ui .w-btn.primary {
+        background: #0f172a; color: #fff; border: 1px solid rgba(15,23,42,0.30);
+    }
+    body[data-theme="dark"] #add-post-ui .w-btn.primary {
+        background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.16);
+    }
+
+    #add-post-ui .w-btn.ghost { background: transparent; }
+
+    #add-post-ui .panelBody { padding: 16px; }
+
+    #add-post-ui .sectionTitle {
+        margin: 2px 2px 10px; font-size: 12px; font-weight: 700; /* Bold */
+        letter-spacing: .15px; display: flex; align-items: center;
+        justify-content: space-between; gap: 10px; color: var(--text);
+    }
+    #add-post-ui .sectionTitle small { font-weight: 300; color: var(--muted); }
+
+    #add-post-ui .grid { display: grid; gap: 16px; }
+
+    #add-post-ui .field { display: flex; flex-direction: column; gap: 8px; }
+
+    #add-post-ui .label {
+        font-size: 12px; font-weight: 600; /* Semi-Bold */
+        display: flex; align-items: center; gap: 8px; color: var(--text);
+    }
+    #add-post-ui .label svg { width: 16px; height: 16px; stroke-width: 1.7; opacity: 0.8; }
+
+    #add-post-ui .hint { font-size: 11px; font-weight: 300; color: var(--muted); line-height: 1.45; }
+
+    /* Inputs */
+    #add-post-ui .w-input, 
+    #add-post-ui .w-textarea,
+    #add-post-ui .w-select {
+        width: 100%; border-radius: 12px;
+        border: 1px solid var(--softBorder);
+        background: rgba(255,255,255,0.55);
+        padding: 10px 12px; font-family: inherit; font-size: 13px;
+        color: var(--text); outline: none;
+    }
+    body[data-theme="dark"] #add-post-ui .w-input,
+    body[data-theme="dark"] #add-post-ui .w-textarea,
+    body[data-theme="dark"] #add-post-ui .w-select {
+        border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.06);
+    }
+
+    #add-post-ui .row2 {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    }
+    @media(max-width:520px){ #add-post-ui .row2 { grid-template-columns: 1fr; } }
+
+    /* Uploads */
+    #add-post-ui .uploadGrid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    }
+    @media(max-width:520px){ #add-post-ui .uploadGrid { grid-template-columns: 1fr; } }
+
+    #add-post-ui .uploadCard {
+        border: 1px solid var(--border); border-radius: 14px;
+        padding: 12px; background: rgba(255,255,255,0.20);
+    }
+    body[data-theme="dark"] #add-post-ui .uploadCard { background: rgba(255,255,255,0.04); }
+
+    #add-post-ui .uploadTop {
+        display: flex; align-items: flex-start; justify-content: space-between;
+        gap: 10px; margin-bottom: 10px;
+    }
+    #add-post-ui .uploadTitle {
+        font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 6px; color: var(--text);
+    }
+
+    #add-post-ui .preview {
+        width: 100%; height: 120px; border-radius: 12px; overflow: hidden;
+        background: rgba(15,23,42,0.06); border: 1px dashed var(--softBorder);
+        display: flex; align-items: center; justify-content: center;
+        color: var(--muted); font-size: 11px; font-weight: 300; text-align: center;
+    }
+    body[data-theme="dark"] #add-post-ui .preview { background: rgba(255,255,255,0.06); }
+    #add-post-ui .preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    #add-post-ui .fileInput { display: none; }
+
+    #add-post-ui .miniBtn {
+        height: 28px; padding: 0 10px; border-radius: 999px;
+        border: 1px solid var(--softBorder);
+        background: rgba(255,255,255,0.35);
+        color: var(--text); font-size: 11px; font-weight: 600;
+        cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+        user-select: none;
+    }
+    body[data-theme="dark"] #add-post-ui .miniBtn { background: rgba(255,255,255,0.06); }
+
+    #add-post-ui .w-textarea { min-height: 200px; resize: vertical; line-height: 1.6; }
+</style>
+
+    <div class="wrap">
+        <form method="POST" enctype="multipart/form-data">
+            <section class="panel">
+                <div class="panelHead">
+                    <div class="panelTitle">
+                        <span data-lucide="plus"></span>
+                        Add Post
+                    </div>
+
+                    <div class="btnRow">
+                        <a href="{{ url_for('manage_posts') }}" class="w-btn ghost">Cancel</a>
+
+                        <button class="w-btn" type="submit" name="action" value="draft">
+                            <span data-lucide="save"></span> Save Draft
+                        </button>
+
+                        <button class="w-btn primary" type="submit" name="action" value="submit">
+                            <span data-lucide="send"></span> Submit Review
+                        </button>
+                    </div>
+                </div>
+
+                <div class="panelBody">
+                    <div class="grid">
+
+                        <div class="sectionTitle">
+                            <span>Basics</span>
+                            <small>Title + category</small>
+                        </div>
+
+                        <div class="field">
+                            <div class="label"><span data-lucide="type"></span> Title</div>
+                            <input class="w-input" name="title" id="title" type="text" placeholder="Post title..." required />
+                        </div>
+
+                        <div class="row2">
+                            <div class="field">
+                                <div class="label"><span data-lucide="tag"></span> Tags</div>
+                                <input class="w-input" name="tags" id="slug" type="text" placeholder="tech, coding, tutorial" />
+                                <div class="hint">Tags (comma separated). Auto-slug disabled for simplicity.</div>
+                            </div>
+
+                            <div class="field">
+                                <div class="label"><span data-lucide="layers"></span> Category</div>
+                                <select name="category" class="w-select">
+                                    <option value="Tech">Technology</option>
+                                    <option value="Life">Lifestyle</option>
+                                    <option value="Programming">Programming</option>
+                                    <option value="News">News</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <div class="label"><span data-lucide="align-left"></span> Excerpt</div>
+                            <textarea class="w-textarea" name="excerpt" style="min-height: 80px;" placeholder="Short excerpt (1–2 lines) ..." required></textarea>
+                            <div class="hint">Shown on home cards.</div>
+                        </div>
+
+                        <div class="sectionTitle" style="margin-top:10px;">
+                            <span>Thumbnails</span>
+                            <small>Normal + Trending</small>
+                        </div>
+
+                        <div class="uploadGrid">
+                            <div class="uploadCard">
+                                <div class="uploadTop">
+                                    <div class="uploadTitle"><span data-lucide="image"></span> Normal</div>
+                                    <label class="miniBtn" for="fileNormal">
+                                        <span data-lucide="upload"></span> Upload
+                                    </label>
+                                </div>
+                                <div class="preview" id="prevNormal">No image</div>
+                                <input class="fileInput" name="thumbnail" id="fileNormal" type="file" accept="image/*" />
+                            </div>
+
+                            <div class="uploadCard">
+                                <div class="uploadTop">
+                                    <div class="uploadTitle"><span data-lucide="flame"></span> Trending</div>
+                                    <label class="miniBtn" for="fileTrending">
+                                        <span data-lucide="upload"></span> Upload
+                                    </label>
+                                </div>
+                                <div class="preview" id="prevTrending">No image</div>
+                                <input class="fileInput" name="trending_thumbnail" id="fileTrending" type="file" accept="image/*" />
+                            </div>
+                        </div>
+
+                        <div class="sectionTitle" style="margin-top:10px;">
+                            <span>Content</span>
+                            <small>Main article</small>
+                        </div>
+
+                        <div class="field">
+                            <div class="label"><span data-lucide="file-text"></span> Body</div>
+                            <textarea class="w-textarea" name="content" placeholder="Write your post here..." required></textarea>
+                            <div class="hint">You can use basic HTML or plain text.</div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+        </form>
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+
+    // Image Preview Logic
+    const fileNormal = document.getElementById("fileNormal");
+    const fileTrending = document.getElementById("fileTrending");
+    const prevNormal = document.getElementById("prevNormal");
+    const prevTrending = document.getElementById("prevTrending");
+
+    function setPreview(el, file){
+      if(!file){ el.textContent = "No image"; return; }
+      const url = URL.createObjectURL(file);
+      el.innerHTML = `<img src="${url}" alt="preview">`;
+    }
+
+    fileNormal.addEventListener("change", ()=> setPreview(prevNormal, fileNormal.files[0]));
+    fileTrending.addEventListener("change", ()=> setPreview(prevTrending, fileTrending.files[0]));
+</script>
+
+{% endblock %}

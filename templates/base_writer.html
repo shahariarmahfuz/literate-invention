@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Writo • Writer Panel</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+
+    :root{
+      --bg:#f1f5f9;
+      --text:#0f172a;
+      --muted:#64748b;
+      --headerGlass: rgba(255,255,255,0.86);
+      --headerBlur: 6px;
+      --softHover: rgba(15,23,42,0.06);
+      --overlay: rgba(0,0,0,0.18);
+      --card:#ffffff;
+      --border:#eef0f6;
+      --softBorder:#e2e8f0;
+
+      /* Toast Colors */
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+    }
+
+    body[data-theme="dark"]{
+      --bg:#0A0A0A;
+      --text:#e5e7eb;
+      --muted:#a1a1aa;
+      --headerGlass: rgba(10,10,10,0.78);
+      --headerBlur: 7px;
+      --softHover: rgba(255,255,255,0.08);
+      --overlay: rgba(0,0,0,0.35);
+      --card: rgba(255,255,255,0.06);
+      --border: rgba(255,255,255,0.10);
+      --softBorder: rgba(255,255,255,0.12);
+    }
+
+    body{
+      font-family:'Outfit', system-ui, sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      overflow-x:hidden;
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+    }
+
+    .pageBlur{transition:filter .18s ease;will-change:filter; flex: 1; display: flex; flex-direction: column;}
+    body.menuOpen .pageBlur{filter:blur(6px)}
+
+    /* ===== Header ===== */
+    .writoHeader{
+      position:sticky; top:0; z-index:1000;
+      background: var(--headerGlass);
+      backdrop-filter: blur(var(--headerBlur)) saturate(115%);
+      -webkit-backdrop-filter: blur(var(--headerBlur)) saturate(115%);
+      border-bottom:1px solid rgba(255,255,255,0.10);
+      box-shadow:0 2px 10px rgba(15,23,42,0.06);
+      height:56px;
+      display:flex; align-items:center; justify-content:space-between;
+      padding-left:28px; padding-right:20px;
+    }
+    body[data-theme="dark"] .writoHeader{
+      border-bottom:1px solid rgba(255,255,255,0.08);
+      box-shadow:0 6px 18px rgba(0,0,0,0.35);
+    }
+
+    .writoHeaderLeft{display:flex;align-items:center;gap:14px}
+    .writoBrand{font-size:18px;font-weight:700;letter-spacing:-0.5px;} /* Logo Bold */
+
+    .writoIconBtn{
+      width:34px;height:34px; border:none; background:transparent;
+      display:inline-flex; align-items:center; justify-content:center;
+      cursor:pointer; padding:0; color:var(--text);
+      user-select:none; border-radius:12px;
+    }
+    .writoIconBtn:hover{background:var(--softHover)}
+    .writoIconBtn:active{transform:scale(.98)}
+    .writoHeaderRight{display:flex;align-items:center;gap:12px}
+    svg.lucide{width:20px;height:20px;stroke-width:1.5}
+
+    /* ===== Overlay ===== */
+    .writoOverlay{
+      position:fixed; inset:0; background:var(--overlay);
+      opacity:0; pointer-events:none; transition:.16s ease; z-index:1200;
+    }
+    body.hasOverlay .writoOverlay{opacity:1;pointer-events:auto}
+
+    /* ===== Side Menu ===== */
+    .writoMenu{
+      position:fixed; top:0; left:0;
+      width:230px; height:100vh;
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(14px) saturate(140%);
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
+      border-right:1px solid rgba(255,255,255,0.4);
+      transform:translateX(-100%); transition:.20s ease;
+      z-index:1300; padding:16px; pointer-events:none;
+    }
+    body[data-theme="dark"] .writoMenu{
+      background: rgba(10,10,10,0.60);
+      border-right:1px solid rgba(255,255,255,0.14);
+    }
+    body.menuOpen .writoMenu{transform:translateX(0);pointer-events:auto}
+    .writoMenuHeader{display:flex;justify-content:flex-end;margin-bottom:16px}
+
+    .writoMenuItem{
+      display:flex; align-items:center; gap:14px;
+      font-size:14px; padding:12px 0; cursor:pointer;
+      border-bottom:1px solid rgba(0,0,0,0.12);
+      color:var(--text); font-weight:500; /* Medium */
+      user-select:none; text-decoration:none;
+    }
+    body[data-theme="dark"] .writoMenuItem{border-bottom:1px solid rgba(255,255,255,0.12)}
+    .writoMenuItem:hover{font-weight: 600; color: var(--text);}
+
+    /* ===== Translate Modal ===== */
+    .writoModal{
+      position:fixed; left:50%; top:86px;
+      transform: translateX(-50%) translateY(8px);
+      width: min(520px, calc(100vw - 28px));
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(14px) saturate(140%);
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
+      border:1px solid rgba(255,255,255,0.35);
+      border-radius:18px;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.15);
+      z-index:1400; opacity:0; pointer-events:none;
+      transition: .16s ease; will-change: transform, opacity; contain: paint;
+    }
+    body[data-theme="dark"] .writoModal{
+      background: rgba(10,10,10,0.64);
+      border:1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+    }
+    .writoModal.open{opacity:1; pointer-events:auto; transform: translateX(-50%) translateY(0);}
+
+    .writoModalInner{padding:14px}
+    .writoModalHead{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding-bottom:10px; border-bottom:1px solid rgba(0,0,0,0.10); margin-bottom:12px;
+    }
+    body[data-theme="dark"] .writoModalHead{border-bottom:1px solid rgba(255,255,255,0.12)}
+
+    .writoModalTitle{display:flex; align-items:center; gap:10px; font-size:14px; font-weight:700;}
+
+    .writoModalClose{
+      width:34px;height:34px;border-radius:12px;
+      border:1px solid rgba(0,0,0,0.10); background: rgba(255,255,255,0.30);
+      display:inline-flex;align-items:center;justify-content:center;
+      cursor:pointer;color:var(--text);
+    }
+    body[data-theme="dark"] .writoModalClose{border:1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06);}
+
+    .writoPillGrid{display:flex;flex-wrap:wrap;gap:8px}
+    .writoLangPill{
+      padding:8px 10px;border-radius:999px;
+      border:1px solid rgba(0,0,0,0.10); background: rgba(255,255,255,0.35);
+      font-size:12px;font-weight:400;color:var(--text);
+      cursor:not-allowed; user-select:none;
+    }
+    body[data-theme="dark"] .writoLangPill{border:1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06);}
+    .writoHint{margin-top:10px; font-size:12px; font-weight:300; color:var(--muted); line-height:1.5;}
+
+    /* ===== Content Container ===== */
+    .writoMainContainer {
+        max-width: 980px; margin: 0 auto; padding: 20px 14px; flex: 1; width: 100%;
+    }
+
+    /* ===== FLASH TOAST (FIXED TYPOGRAPHY) ===== */
+    .flashZone{
+      position: fixed; left: 50%; top: 12px;
+      transform: translateX(-50%); width: min(520px, calc(100vw - 28px));
+      z-index: 5000; pointer-events: none; display: grid; gap: 10px;
+    }
+    .flash{
+      pointer-events: auto; border-radius: 18px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.45);
+      background: rgba(255,255,255,0.78);
+      backdrop-filter: blur(14px) saturate(140%);
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
+      box-shadow: 0 18px 45px rgba(0,0,0,0.16);
+      transform: translateY(-6px); opacity: 0;
+      transition: .18s ease; will-change: transform, opacity;
+    }
+    body[data-theme="dark"] .flash{
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(10,10,10,0.68);
+      box-shadow: 0 22px 60px rgba(0,0,0,0.55);
+    }
+    .flash.show{transform: translateY(0);opacity: 1;}
+
+    .flashInner{padding: 12px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;}
+    .flashLeft{display:flex;align-items:flex-start;gap:10px;min-width:0;}
+
+    .flashIcon{
+      width:34px;height:34px;border-radius:14px;
+      border:1px solid var(--softBorder); background: rgba(15,23,42,0.06);
+      display:flex;align-items:center;justify-content:center; flex:0 0 auto;
+    }
+    body[data-theme="dark"] .flashIcon{background: rgba(255,255,255,0.06)}
+
+    /* UPDATED FONT WEIGHTS FOR FLASH */
+    .flashTitle {
+        font-size: 13px; 
+        font-weight: 700; /* Bold (was 900) */
+        letter-spacing: -0.1px; 
+        line-height: 1.2;
+        color: var(--text);
+    }
+    .flashMsg {
+        margin-top: 2px; 
+        font-size: 12px; 
+        font-weight: 400; /* Regular (was 300) */
+        color: var(--muted); 
+        line-height: 1.45;
+    }
+
+    .flashClose{
+      width:34px;height:34px;border-radius:14px;
+      border:1px solid rgba(0,0,0,0.10); background: rgba(255,255,255,0.35); cursor:pointer;
+      display:inline-flex;align-items:center;justify-content:center; color:var(--text); flex:0 0 auto;
+    }
+    body[data-theme="dark"] .flashClose{border:1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06);}
+
+    .flashBar{height: 3px; width: 100%; background: rgba(15,23,42,0.06);}
+    .flashBar > i{
+      display:block; height:100%; width: 100%; transform-origin: left;
+      transform: scaleX(1); border-radius: 999px;
+      animation: shrink var(--dur, 2600ms) linear forwards;
+    }
+    .flash.ok .flashBar > i{ background: var(--ok); }
+    .flash.warn .flashBar > i{ background: var(--warn); }
+    .flash.bad .flashBar > i{ background: var(--bad); }
+    @keyframes shrink{ from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+    /* ===== DELETE CONFIRM MODAL ===== */
+    .confirmOverlay{
+      position:fixed; inset:0; background: var(--overlay);
+      opacity:0; pointer-events:none; transition:.16s ease; z-index:6000;
+    }
+    .confirmOverlay.open{opacity:1;pointer-events:auto}
+
+    .confirmModal{
+      position:fixed; left:50%; top:50%;
+      transform: translate(-50%, calc(-50% + 8px));
+      width: min(520px, calc(100vw - 28px));
+      border-radius: 18px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.45);
+      background: rgba(255,255,255,0.78);
+      backdrop-filter: blur(14px) saturate(140%);
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
+      box-shadow: 0 22px 60px rgba(0,0,0,0.20);
+      opacity:0; pointer-events:none; transition:.16s ease; z-index:6500;
+    }
+    body[data-theme="dark"] .confirmModal{
+      border: 1px solid rgba(255,255,255,0.14); background: rgba(10,10,10,0.68);
+      box-shadow: 0 28px 80px rgba(0,0,0,0.60);
+    }
+    .confirmModal.open{opacity:1;pointer-events:auto;transform: translate(-50%, -50%);}
+
+    .confirmInner{padding:14px}
+    .confirmHead{
+      display:flex;align-items:flex-start;justify-content:space-between;
+      gap:10px;padding-bottom:10px;border-bottom:1px solid rgba(0,0,0,0.10);margin-bottom:10px;
+    }
+    body[data-theme="dark"] .confirmHead{border-bottom:1px solid rgba(255,255,255,0.12)}
+    .confirmTitle{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;}
+
+    .confirmMsg{font-size:12px;font-weight:300;color:var(--muted);line-height:1.55;}
+    .confirmActions{margin-top:12px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;}
+
+    .cBtn{
+      height:34px;padding:0 12px;border-radius:999px;
+      border:1px solid var(--softBorder); background: rgba(255,255,255,0.35);
+      color:var(--text);font-size:12px;font-weight:600;
+      cursor:pointer;display:inline-flex;align-items:center;gap:8px; user-select:none;
+    }
+    body[data-theme="dark"] .cBtn{background: rgba(255,255,255,0.06)}
+    .cBtn.danger{background: rgba(239,68,68,0.10);border:1px solid rgba(239,68,68,0.22);}
+
+    /* Footer */
+    .writerFooterWrap{max-width:980px; margin:0 auto; padding:10px 14px 18px; width:100%;}
+    .writerFooter{
+      background: rgba(255,255,255,0.20); border:1px solid var(--border);
+      border-radius:16px; padding:10px 12px; display:flex;align-items:center;justify-content:space-between;
+      gap:10px;flex-wrap:wrap; color:var(--muted); font-size:11px; font-weight:300;
+    }
+    body[data-theme="dark"] .writerFooter{background: rgba(255,255,255,0.04)}
+    .writerLinks{display:flex;gap:12px;} .writerLinks a{color:var(--muted);text-decoration:none;}
+  </style>
+</head>
+
+<body data-theme="light">
+  <div class="flashZone" id="flashZone" aria-live="polite" aria-atomic="true"></div>
+
+  <div class="confirmOverlay" id="confirmOverlay"></div>
+  <section class="confirmModal" id="confirmModal" aria-hidden="true">
+    <div class="confirmInner">
+      <div class="confirmHead">
+        <div class="confirmTitle"><span data-lucide="triangle-alert"></span> Delete Confirmation</div>
+        <button class="cBtn" id="confirmClose" type="button" style="width:34px;padding:0;justify-content:center"><span data-lucide="x"></span></button>
+      </div>
+      <div class="confirmMsg" id="confirmMsg">Are you sure? Once deleted, this post cannot be recovered.</div>
+      <div class="confirmActions">
+        <button class="cBtn" id="confirmCancel" type="button"><span data-lucide="x-circle"></span> Cancel</button>
+        <button class="cBtn danger" id="confirmDelete" type="button"><span data-lucide="trash-2"></span> Delete</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="pageBlur">
+    <header class="writoHeader">
+      <div class="writoHeaderLeft">
+        <button class="writoIconBtn" id="writoOpenMenu" type="button"><span data-lucide="menu"></span></button>
+        <div class="writoBrand">Writo</div>
+      </div>
+      <div class="writoHeaderRight">
+        <button class="writoIconBtn" id="writoBtnTranslate" type="button" aria-label="Translate">
+          <span data-lucide="languages"></span>
+        </button>
+
+        <button class="writoIconBtn" id="writoBtnTheme" type="button">
+          <span id="writoIconMoon" data-lucide="moon"></span>
+          <span id="writoIconSun" data-lucide="sun" style="display:none"></span>
+        </button>
+      </div>
+    </header>
+
+    <main class="writoMainContainer">
+        {% block content %}{% endblock %}
+    </main>
+
+    <div class="writerFooterWrap">
+      <footer class="writerFooter">
+        <div>© 2026 Writo • Writer Panel</div>
+        <div class="writerLinks"><a href="#">Help</a><a href="#">Terms</a></div>
+      </footer>
+    </div>
+  </div>
+
+  <div class="writoOverlay" id="writoOverlay"></div>
+
+  <aside class="writoMenu" id="writoMenu">
+    <div class="writoMenuHeader">
+      <button class="writoIconBtn" id="writoCloseMenu" type="button"><span data-lucide="x"></span></button>
+    </div>
+
+    <a class="writoMenuItem" href="{{ url_for('index') }}">
+        <span data-lucide="home"></span><span>Home</span>
+    </a>
+    <a class="writoMenuItem" href="{{ url_for('dashboard_writer') }}">
+        <span data-lucide="layout-dashboard"></span><span>Dashboard</span>
+    </a>
+    <a class="writoMenuItem" href="{{ url_for('create_post') }}">
+        <span data-lucide="square-pen"></span><span>Add Post</span>
+    </a>
+    <a class="writoMenuItem" href="{{ url_for('manage_posts') }}">
+        <span data-lucide="file-text"></span><span>My Posts</span>
+    </a>
+    <a class="writoMenuItem" href="{{ url_for('user_profile') }}">
+        <span data-lucide="user"></span><span>Profile</span>
+    </a>
+    <a class="writoMenuItem" href="{{ url_for('logout') }}" style="color: #ef4444;">
+        <span data-lucide="log-out"></span><span>Logout</span>
+    </a>
+  </aside>
+
+  <section class="writoModal" id="writoModalTranslate" aria-hidden="true">
+    <div class="writoModalInner">
+      <div class="writoModalHead">
+        <div class="writoModalTitle"><span data-lucide="languages"></span> Translate</div>
+        <button class="writoModalClose" type="button" data-writo-close aria-label="Close">
+          <span data-lucide="x"></span>
+        </button>
+      </div>
+
+      <div class="writoPillGrid">
+        <div class="writoLangPill">বাংলা</div>
+        <div class="writoLangPill">English</div>
+        <div class="writoLangPill">हिन्दी</div>
+        <div class="writoLangPill">اردو</div>
+        <div class="writoLangPill">العربية</div>
+      </div>
+      <div class="writoHint">Language selection UI (Currently Demo).</div>
+    </div>
+  </section>
+
+  <script>
+    lucide.createIcons();
+
+    const W = {
+      body: document.body,
+      overlay: document.getElementById("writoOverlay"),
+      menu: document.getElementById("writoMenu"),
+      btnTheme: document.getElementById("writoBtnTheme"),
+      iconMoon: document.getElementById("writoIconMoon"),
+      iconSun: document.getElementById("writoIconSun"),
+      modalTranslate: document.getElementById("writoModalTranslate"),
+      btnTranslate: document.getElementById("writoBtnTranslate")
+    };
+
+    // Theme Logic
+    function applyTheme(theme){
+      W.body.setAttribute("data-theme", theme);
+      W.iconMoon.style.display = theme === "dark" ? "none" : "inline-block";
+      W.iconSun.style.display  = theme === "dark" ? "inline-block" : "none";
+      localStorage.setItem("writoTheme", theme);
+    }
+    applyTheme(localStorage.getItem("writoTheme")==="dark" ? "dark" : "light");
+    W.btnTheme.addEventListener("click", () => applyTheme(W.body.getAttribute("data-theme")==="dark" ? "light" : "dark"));
+
+    // Menu Logic
+    function closeMenu(){ 
+      W.body.classList.remove("menuOpen"); 
+      W.body.classList.remove("hasOverlay");
+      W.modalTranslate.classList.remove("open");
+    }
+
+    document.getElementById("writoOpenMenu").addEventListener("click", () => { 
+        closeMenu(); 
+        W.body.classList.add("menuOpen"); 
+        W.body.classList.add("hasOverlay"); 
+    });
+
+    document.getElementById("writoCloseMenu").addEventListener("click", closeMenu);
+
+    // Translate Logic
+    W.btnTranslate.addEventListener("click", () => {
+        W.body.classList.remove("menuOpen");
+        W.modalTranslate.classList.toggle("open");
+        if(W.modalTranslate.classList.contains("open")) W.body.classList.add("hasOverlay");
+        else W.body.classList.remove("hasOverlay");
+    });
+
+    document.querySelectorAll("[data-writo-close]").forEach(btn => btn.addEventListener("click", closeMenu));
+    W.overlay.addEventListener("click", closeMenu);
+
+    // Flash System
+    const flashZone = document.getElementById("flashZone");
+    window.showFlash = function(type, title, message, timeoutMs = 3000){
+      const el = document.createElement("div");
+      el.className = `flash ${type}`;
+      el.style.setProperty("--dur", timeoutMs + "ms");
+      const icon = type === "ok" ? "check-circle" : (type === "warn" ? "alert-circle" : "x-circle");
+
+      el.innerHTML = `
+        <div class="flashInner">
+          <div class="flashLeft">
+            <div class="flashIcon"><span data-lucide="${icon}"></span></div>
+            <div class="flashText"><div class="flashTitle">${title}</div><div class="flashMsg">${message}</div></div>
+          </div>
+          <button class="flashClose"><span data-lucide="x"></span></button>
+        </div>
+        <div class="flashBar"><i></i></div>
+      `;
+      flashZone.prepend(el);
+      lucide.createIcons();
+      const close = () => { el.classList.remove("show"); setTimeout(()=> el.remove(), 160); };
+      el.querySelector(".flashClose").addEventListener("click", close);
+      requestAnimationFrame(()=> requestAnimationFrame(()=> el.classList.add("show")));
+      setTimeout(close, timeoutMs);
+    }
+
+    // Delete Modal
+    let deleteUrlTarget = null;
+    const confirmOverlay = document.getElementById("confirmOverlay");
+    const confirmModal = document.getElementById("confirmModal");
+    const confirmDeleteBtn = document.getElementById("confirmDelete");
+
+    function closeConfirm() {
+        confirmOverlay.classList.remove("open");
+        confirmModal.classList.remove("open");
+        deleteUrlTarget = null;
+    }
+    window.openDeleteConfirm = function(url) {
+        deleteUrlTarget = url;
+        confirmOverlay.classList.add("open");
+        confirmModal.classList.add("open");
+    }
+    document.getElementById("confirmClose").onclick = closeConfirm;
+    document.getElementById("confirmCancel").onclick = closeConfirm;
+    confirmOverlay.onclick = closeConfirm;
+    confirmDeleteBtn.onclick = function() { if (deleteUrlTarget) window.location.href = deleteUrlTarget; };
+  </script>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <script>
+      window.onload = function() {
+        {% for category, message in messages %}
+           var type = 'ok'; var title = 'Success';
+           if ('{{ category }}' == 'danger') { type = 'bad'; title = 'Error'; }
+           if ('{{ category }}' == 'warning') { type = 'warn'; title = 'Warning'; }
+           if ('{{ category }}' == 'info') { type = 'warn'; title = 'Info'; }
+           showFlash(type, title, "{{ message }}");
+        {% endfor %}
+      }
+    </script>
+    {% endif %}
+  {% endwith %}
+</body>
+</html>

@@ -1,0 +1,313 @@
+{% extends layout %}
+
+{% block content %}
+
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<div id="custom-editor-ui">
+
+<style>
+    /* Scoped CSS */
+    #custom-editor-ui {
+        font-family: 'Outfit', sans-serif;
+        --bg: #f1f5f9;
+        --text: #0f172a;
+        --muted: #64748b;
+        --card: #ffffff;
+        --border: #eef0f6;
+        --soft: #f8fafc;
+        --softBorder: #e2e8f0;
+        --ok: #22c55e;
+        --warn: #f59e0b;
+        --bad: #ef4444;
+
+        width: 100%; max-width: 600px; margin: 0 auto; padding-bottom: 40px;
+    }
+
+    body[data-theme="dark"] #custom-editor-ui {
+        --bg: #0A0A0A;
+        --text: #e5e7eb;
+        --muted: #a1a1aa;
+        --card: rgba(255,255,255,0.06);
+        --border: rgba(255,255,255,0.10);
+        --soft: rgba(255,255,255,0.06);
+        --softBorder: rgba(255,255,255,0.12);
+    }
+
+    /* Panel */
+    #custom-editor-ui .panel {
+        background: var(--card); border: 1px solid var(--border);
+        border-radius: 18px; box-shadow: 0 4px 12px rgba(16,24,40,.03);
+        overflow: hidden; margin-top: 10px;
+    }
+
+    #custom-editor-ui .panelHead {
+        padding: 12px 14px; border-bottom: 1px solid var(--border);
+        display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        background: rgba(255,255,255,0.20); flex-wrap: wrap;
+    }
+    body[data-theme="dark"] #custom-editor-ui .panelHead { background: rgba(255,255,255,0.04); }
+
+    #custom-editor-ui .panelTitle {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 14px; font-weight: 700; /* Bold */
+        letter-spacing: -0.1px; color: var(--text);
+    }
+
+    /* Buttons */
+    #custom-editor-ui .btnRow {
+        display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;
+    }
+
+    #custom-editor-ui .w-btn {
+        height: 32px; padding: 0 14px; border-radius: 999px;
+        border: 1px solid var(--softBorder);
+        background: rgba(255,255,255,0.35);
+        color: var(--text); font-size: 12px; font-weight: 600; /* Semi-Bold */
+        cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+        user-select: none; text-decoration: none; transition: transform 0.1s;
+    }
+    body[data-theme="dark"] #custom-editor-ui .w-btn { background: rgba(255,255,255,0.06); }
+    #custom-editor-ui .w-btn:active { transform: scale(.96); }
+
+    #custom-editor-ui .w-btn.primary {
+        background: #0f172a; color: #fff; border: 1px solid rgba(15,23,42,0.30);
+    }
+    body[data-theme="dark"] #custom-editor-ui .w-btn.primary {
+        background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.1);
+    }
+
+    #custom-editor-ui .panelBody { padding: 16px; }
+    #custom-editor-ui .grid { display: grid; gap: 16px; }
+
+    #custom-editor-ui .sectionTitle {
+        margin: 4px 2px 6px; font-size: 12px; font-weight: 700; /* Bold */
+        letter-spacing: .15px; color: var(--text);
+        display: flex; align-items: center; justify-content: space-between;
+    }
+    #custom-editor-ui .sectionTitle small { font-weight: 300; color: var(--muted); }
+
+    #custom-editor-ui .field { display: flex; flex-direction: column; gap: 6px; }
+
+    #custom-editor-ui .label {
+        font-size: 12px; font-weight: 600; /* Semi-Bold */
+        color: var(--text); display: flex; align-items: center; gap: 6px;
+    }
+    #custom-editor-ui .label svg { width: 14px; height: 14px; stroke-width: 2; opacity: 0.7; }
+
+    #custom-editor-ui .hint { font-size: 11px; font-weight: 300; color: var(--muted); }
+
+    /* Inputs */
+    #custom-editor-ui .w-input, 
+    #custom-editor-ui .w-textarea, 
+    #custom-editor-ui .w-select {
+        width: 100%; border-radius: 12px;
+        border: 1px solid var(--softBorder);
+        background: rgba(255,255,255,0.5);
+        padding: 10px 12px; font-family: inherit; font-size: 13px; font-weight: 400; /* Regular */
+        color: var(--text); outline: none; box-shadow: none;
+    }
+    body[data-theme="dark"] #custom-editor-ui .w-input,
+    body[data-theme="dark"] #custom-editor-ui .w-textarea,
+    body[data-theme="dark"] #custom-editor-ui .w-select {
+        border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.06);
+    }
+    #custom-editor-ui .w-textarea { min-height: 140px; resize: vertical; line-height: 1.6; }
+
+    #custom-editor-ui .row2 {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    }
+    @media(max-width: 500px) { #custom-editor-ui .row2 { grid-template-columns: 1fr; } }
+
+    /* Upload Cards */
+    #custom-editor-ui .uploadGrid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    }
+    @media(max-width: 500px) { #custom-editor-ui .uploadGrid { grid-template-columns: 1fr; } }
+
+    #custom-editor-ui .uploadCard {
+        border: 1px solid var(--border); border-radius: 14px;
+        padding: 12px; background: rgba(255,255,255,0.3);
+    }
+    body[data-theme="dark"] #custom-editor-ui .uploadCard { background: rgba(255,255,255,0.04); }
+
+    #custom-editor-ui .uploadTop {
+        display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px;
+    }
+    #custom-editor-ui .uploadTitle { font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 6px; color: var(--text); }
+
+    #custom-editor-ui .preview {
+        width: 100%; height: 110px; border-radius: 10px; overflow: hidden;
+        background: rgba(15,23,42,0.04); border: 1px dashed var(--softBorder);
+        display: flex; align-items: center; justify-content: center;
+        color: var(--muted); font-size: 11px;
+    }
+    #custom-editor-ui .preview img { width: 100%; height: 100%; object-fit: cover; }
+
+    #custom-editor-ui .miniBtn {
+        height: 26px; padding: 0 10px; border-radius: 999px;
+        border: 1px solid var(--softBorder);
+        background: var(--card); color: var(--text);
+        font-size: 10px; font-weight: 600; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 4px;
+    }
+
+    #custom-editor-ui .statusLine {
+        margin-top: 10px; display: flex; align-items: center; justify-content: space-between;
+        font-size: 11px; color: var(--muted);
+    }
+    #custom-editor-ui .statusChip {
+        display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+        border-radius: 999px; border: 1px solid var(--softBorder);
+        background: var(--soft); color: var(--text); font-weight: 600;
+    }
+    #custom-editor-ui .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+    #custom-editor-ui .dot.ok { background: var(--ok); }
+    #custom-editor-ui .dot.warn { background: var(--warn); }
+    #custom-editor-ui .dot.bad { background: var(--bad); }
+
+</style>
+
+    <form method="POST" enctype="multipart/form-data">
+        <section class="panel">
+            <div class="panelHead">
+                <div class="panelTitle">
+                    <span data-lucide="square-pen"></span>
+                    Edit Post
+                </div>
+
+                <div class="btnRow">
+                    <a href="{{ url_for('manage_posts') }}" class="w-btn ghost">
+                        <span data-lucide="arrow-left"></span> Back
+                    </a>
+                    <button class="w-btn" type="submit" name="action" value="draft">
+                        <span data-lucide="save"></span> Draft
+                    </button>
+                    <button class="w-btn primary" type="submit" name="action" value="submit">
+                        <span data-lucide="send"></span> 
+                        {% if post.status == 'active' %} Update {% else %} Submit {% endif %}
+                    </button>
+                </div>
+            </div>
+
+            <div class="panelBody">
+                <div class="grid">
+
+                    <div class="sectionTitle">
+                        <span>Basics</span> <small>Required</small>
+                    </div>
+
+                    <div class="field">
+                        <div class="label"><span data-lucide="type"></span> Title</div>
+                        <input class="w-input" name="title" type="text" value="{{ post.title }}" required placeholder="Enter post title..." />
+                    </div>
+
+                    <div class="row2">
+                        <div class="field">
+                            <div class="label"><span data-lucide="tag"></span> Tags</div>
+                            <input class="w-input" name="tags" type="text" value="{{ post.tags or '' }}" placeholder="tech, news..." />
+                        </div>
+
+                        <div class="field">
+                            <div class="label"><span data-lucide="layers"></span> Category</div>
+                            <select name="category" class="w-select">
+                                <option value="Tech" {% if post.category == 'Tech' %}selected{% endif %}>Technology</option>
+                                <option value="Life" {% if post.category == 'Life' %}selected{% endif %}>Lifestyle</option>
+                                <option value="Programming" {% if post.category == 'Programming' %}selected{% endif %}>Programming</option>
+                                <option value="News" {% if post.category == 'News' %}selected{% endif %}>News</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="label"><span data-lucide="align-left"></span> Excerpt</div>
+                        <textarea class="w-textarea" name="excerpt" style="min-height: 80px;" required placeholder="Short summary...">{{ post.excerpt }}</textarea>
+                    </div>
+
+                    <div class="sectionTitle" style="margin-top: 10px;">
+                        <span>Content</span> <small>Body</small>
+                    </div>
+
+                    <div class="field">
+                        <textarea class="w-textarea" name="content" required placeholder="Write full article here...">{{ post.content }}</textarea>
+                    </div>
+
+                    <div class="sectionTitle" style="margin-top: 10px;">
+                        <span>Images</span> <small>Optional</small>
+                    </div>
+
+                    <div class="uploadGrid">
+                        <div class="uploadCard">
+                            <div class="uploadTop">
+                                <div class="uploadTitle"><span data-lucide="image"></span> Standard</div>
+                                <label class="miniBtn" for="fileNormal">
+                                    <span data-lucide="upload"></span> Upload
+                                </label>
+                            </div>
+                            <div class="preview" id="prevNormal">
+                                {% if post.thumbnail %}
+                                    <img src="{{ url_for('static', filename='uploads/' + post.thumbnail) }}" alt="Img">
+                                {% else %}
+                                    No Image
+                                {% endif %}
+                            </div>
+                            <input id="fileNormal" name="thumbnail" type="file" accept="image/*" style="display:none;" />
+                        </div>
+
+                        <div class="uploadCard">
+                            <div class="uploadTop">
+                                <div class="uploadTitle"><span data-lucide="flame"></span> Trending</div>
+                                <label class="miniBtn" for="fileTrending">
+                                    <span data-lucide="upload"></span> Upload
+                                </label>
+                            </div>
+                            <div class="preview" id="prevTrending">
+                                {% if post.trending_thumbnail %}
+                                    <img src="{{ url_for('static', filename='uploads/' + post.trending_thumbnail) }}" alt="Img">
+                                {% else %}
+                                    No Image
+                                {% endif %}
+                            </div>
+                            <input id="fileTrending" name="trending_thumbnail" type="file" accept="image/*" style="display:none;" />
+                        </div>
+                    </div>
+
+                    <div class="statusLine">
+                        <div class="statusChip">
+                            <span class="dot {% if post.status == 'active' %}ok{% elif post.status == 'rejected' %}bad{% else %}warn{% endif %}"></span>
+                            {{ post.status|capitalize }}
+                        </div>
+                        {% if post.status == 'rejected' %}
+                            <span style="color:var(--bad)">Fix required</span>
+                        {% endif %}
+                    </div>
+
+                </div>
+            </div>
+        </section>
+    </form>
+
+</div>
+
+<script>
+    lucide.createIcons();
+
+    function setupPreview(inputId, previewId) {
+        const input = document.getElementById(inputId);
+        const preview = document.getElementById(previewId);
+        input.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;">`;
+                }
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+    }
+
+    setupPreview('fileNormal', 'prevNormal');
+    setupPreview('fileTrending', 'prevTrending');
+</script>
+
+{% endblock %}

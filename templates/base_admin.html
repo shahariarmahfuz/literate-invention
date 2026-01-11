@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writo • Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Outfit', sans-serif; background-color: #f8fafc; }
+        .sidebar { width: 260px; height: 100vh; position: fixed; top: 0; left: 0; background: #0f172a; color: #fff; padding: 20px; z-index: 1000; transition: 0.3s; }
+        .sidebar-header { font-size: 1.5rem; font-weight: 700; margin-bottom: 40px; display: flex; align-items: center; gap: 10px; color: #fff; text-decoration: none; }
+        .nav-link { color: #94a3b8; font-weight: 500; padding: 12px 15px; border-radius: 10px; margin-bottom: 5px; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
+        .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.1); color: #fff; }
+        .nav-link svg { width: 20px; height: 20px; }
+        .main-content { margin-left: 260px; padding: 30px; min-height: 100vh; }
+        .alert { border-radius: 12px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .section-header { font-size: 12px; text-transform: uppercase; color: #64748b; font-weight: 700; margin: 20px 0 10px 15px; letter-spacing: 0.5px; }
+        @media(max-width: 768px){ .sidebar { transform: translateX(-100%); } .sidebar.active { transform: translateX(0); } .main-content { margin-left: 0; } .mobile-toggle { display: block !important; } }
+        .mobile-toggle { display: none; position: fixed; top: 15px; right: 15px; z-index: 1100; }
+    </style>
+</head>
+<body>
+    <button class="btn btn-dark mobile-toggle shadow" onclick="document.querySelector('.sidebar').classList.toggle('active')"><i data-lucide="menu"></i></button>
+    <nav class="sidebar">
+        <a href="/" class="sidebar-header"><i data-lucide="shield-check"></i> Admin Panel</a>
+        <ul class="nav flex-column">
+            <li class="nav-item"><a href="{{ url_for('dashboard_admin') }}" class="nav-link {{ 'active' if request.endpoint == 'dashboard_admin' else '' }}"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
+            <li class="nav-item"><a href="{{ url_for('admin_users') }}" class="nav-link {{ 'active' if request.endpoint == 'admin_users' else '' }}"><i data-lucide="users"></i> User Management</a></li>
+
+            <div class="section-header">Moderation</div>
+            <li class="nav-item"><a href="{{ url_for('admin_post_reports') }}" class="nav-link {{ 'active' if request.endpoint == 'admin_post_reports' else '' }}"><i data-lucide="flag"></i> Post Reports</a></li>
+            <li class="nav-item"><a href="{{ url_for('admin_comment_reports') }}" class="nav-link {{ 'active' if request.endpoint == 'admin_comment_reports' else '' }}"><i data-lucide="message-square-warning"></i> Comment Reports</a></li>
+
+            <div class="section-header">System</div>
+            <li class="nav-item"><a href="/" class="nav-link"><i data-lucide="home"></i> View Website</a></li>
+            <li class="nav-item"><a href="{{ url_for('logout') }}" class="nav-link text-danger"><i data-lucide="log-out"></i> Logout</a></li>
+        </ul>
+    </nav>
+    <main class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">{{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>lucide.createIcons();</script>
+</body>
+</html>

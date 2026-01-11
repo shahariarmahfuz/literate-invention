@@ -1,0 +1,798 @@
+{% extends layout %}
+
+{% block content %}
+
+<!-- ✅ HOME ONLY STYLES (base.html untouched) -->
+<style>
+  /* ===== Smart Image (Home only) ===== */
+  .imageShimmer{
+    position:absolute; inset:0;
+    background: var(--img-overlay);
+    border:1px solid var(--img-stroke);
+    pointer-events:none;
+    opacity:0;
+    transition: opacity .18s ease;
+  }
+  .imageShimmer::after{
+    content:"";
+    position:absolute;
+    inset:-40% -60%;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.8) 45%, transparent 90%);
+    transform: translateX(-40%);
+    animation: shimmer 1.1s infinite linear;
+  }
+  .imgBox.is-loading .imageShimmer{ opacity:1; }
+  .imgBox.is-loading img{ opacity:0; }
+  .imgBox.is-loaded .imageShimmer{ opacity:0; }
+  .imgBox.is-loaded img{ opacity:1; }
+
+  /* ===== Trending Carousel ===== */
+  .trendWrap{ max-width:520px; margin:12px auto 0; padding:0 14px; position:relative; z-index:900; }
+  .carousel{
+    width:100%;
+    aspect-ratio:16/6.8;
+    position:relative;
+    overflow:hidden;
+    border-radius:16px;
+    border:1px solid rgba(0,0,0,0.10);
+    background:var(--card);
+    box-shadow: var(--shadow);
+  }
+  body[data-theme="dark"] .carousel{ border:1px solid rgba(255,255,255,0.12); }
+  .slides{ width:100%; height:100%; position:relative; }
+  .slides img{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    object-fit:cover;
+    opacity:0;
+    transition:opacity 1.2s ease;
+  }
+  .slides img.active{ opacity:1; }
+  .overlay{
+    position:absolute; inset:0;
+    background:linear-gradient(to bottom, rgba(0,0,0,0.12), rgba(0,0,0,0.52));
+    z-index:2;
+    pointer-events:none;
+  }
+  .slide-title{
+    position:absolute;
+    bottom:42px; left:18px;
+    z-index:4;
+    color:#fff;
+    font-size:16px;
+    font-weight:700;
+    line-height:1.3;
+    max-width:80%;
+    letter-spacing:-0.2px;
+  }
+  .arrow{
+    position:absolute; top:50%;
+    transform:translateY(-50%);
+    width:26px; height:26px;
+    border-radius:50%;
+    background:rgba(0,0,0,0.35);
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    z-index:5;
+    opacity:0;
+    transition:opacity .25s ease;
+    user-select:none;
+  }
+  .arrow svg{ width:14px; height:14px; stroke-width:2; }
+  .arrow.left{ left:10px; }
+  .arrow.right{ right:10px; }
+  .carousel:hover .arrow,
+  .carousel:active .arrow{ opacity:1; }
+
+  .link-icon{
+    position:absolute; top:12px; right:12px;
+    width:28px; height:28px;
+    border-radius:50%;
+    background:rgba(0,0,0,0.35);
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    z-index:5;
+    opacity:0;
+    transition:opacity .25s ease;
+    user-select:none;
+    text-decoration:none;
+  }
+  .link-icon svg{ width:14px; height:14px; stroke-width:2; }
+  .carousel:hover .link-icon,
+  .carousel:active .link-icon{ opacity:1; }
+
+  .dots{
+    position:absolute; bottom:14px; left:50%;
+    transform:translateX(-50%);
+    display:flex; gap:7px;
+    z-index:5;
+  }
+  .dot{
+    width:5px; height:5px;
+    border-radius:50%;
+    background:rgba(255,255,255,.4);
+    transition:.25s;
+    cursor:pointer;
+  }
+  .dot.active{
+    width:14px; height:5px;
+    border-radius:6px;
+    background:#fff;
+  }
+
+  /* ===== Latest Section ===== */
+  .sectionHead{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin: 14px 2px 10px;
+  }
+  .sectionTitleHead{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin:0;
+    font-size:14px;
+    letter-spacing:0.4px;
+    color:var(--muted);
+    font-weight:500;
+    text-transform:uppercase;
+  }
+  .sectionTitleHead svg{ width:16px; height:16px; stroke-width:1.8; cursor:default; }
+  .viewAllLink{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:12px;
+    color:var(--muted);
+    text-decoration:none;
+    letter-spacing:0.3px;
+    font-weight:300;
+  }
+  .viewAllLink svg{ width:14px; height:14px; stroke-width:1.8; }
+
+  .latestList{ display:flex; flex-direction:column; gap:12px; padding-bottom:14px; }
+  .latestCard{
+    width:100%;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow: var(--shadow);
+  }
+  .thumb{ width:100%; aspect-ratio:16/8.2; background:#f2f3f7; }
+  .content{ padding:12px 12px 10px; }
+
+  .badgeRow{ display:flex; gap:6px; margin-bottom:6px; flex-wrap:wrap; }
+  .badge{
+    font-size:10px;
+    font-weight:500;
+    color:var(--text);
+    padding:2px 8px;
+    border-radius:999px;
+    background:var(--soft);
+    border:1px solid var(--softBorder);
+  }
+  .title{
+    font-size:14px;
+    font-weight:700;
+    line-height:1.25;
+    color:var(--text);
+    margin-bottom:6px;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+  .excerpt{
+    font-size:13px;
+    font-weight:300;
+    line-height:1.5;
+    color:var(--muted);
+    margin-bottom:10px;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+  .metaRow{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding-top:8px;
+    border-top:1px solid var(--border);
+  }
+  .metaLeft{ display:flex; gap:8px; align-items:center; min-width:0; }
+  .avatar{
+    width:28px; height:28px;
+    border-radius:50%;
+    overflow:hidden;
+    flex:0 0 auto;
+    background:#e9edf6;
+  }
+  .author{
+    font-size:12px;
+    font-weight:500;
+    color:var(--text);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    max-width:170px;
+  }
+  .subMeta{
+    font-size:11px;
+    font-weight:300;
+    color:var(--muted);
+    display:flex;
+    align-items:center;
+    gap:7px;
+  }
+  .dotMini{
+    width:3px; height:3px;
+    border-radius:50%;
+    background:#cbd5e1;
+    display:inline-block;
+  }
+  .metaRight{ display:flex; align-items:center; gap:10px; flex:0 0 auto; }
+  .comments{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    font-size:11px;
+    color:var(--muted);
+  }
+  .comments i{ font-size:12px; }
+
+  .bookmarkBtn{
+    width:32px; height:32px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    background: rgba(255,255,255,0.40);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    padding:0;
+    color:var(--text);
+    text-decoration:none;
+  }
+  body[data-theme="dark"] .bookmarkBtn{ background: rgba(255,255,255,0.06); }
+  .bookmarkBtn i{ font-size:15px; }
+
+  /* ===== Pagination ===== */
+  .pagination{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    padding:10px 0 10px;
+  }
+  .pageBtn{
+    min-width:36px;
+    height:36px;
+    padding:0 10px;
+    border-radius:12px;
+    border:1px solid rgba(0,0,0,0.12);
+    background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(10px) saturate(140%);
+    -webkit-backdrop-filter: blur(10px) saturate(140%);
+    cursor:pointer;
+    font-family:inherit;
+    font-size:13px;
+    font-weight:500;
+    color:var(--text);
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    box-shadow:0 10px 30px rgba(16,24,40,.04);
+    user-select:none;
+    text-decoration:none;
+  }
+  body[data-theme="dark"] .pageBtn{
+    border:1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.06);
+    box-shadow: 0 16px 45px rgba(0,0,0,0.35);
+  }
+  .pageBtn svg{ width:16px; height:16px; stroke-width:2; }
+  .pageBtn.active{
+    border-color: rgba(0,0,0,0.18);
+    box-shadow:0 12px 34px rgba(16,24,40,.08);
+    transform: translateY(-0.5px);
+  }
+
+  /* ===== Love + Mini Cards ===== */
+  .loveSection{ margin-top:12px; padding-bottom:18px; }
+  .sectionTitle{ font-size:16px; font-weight:700; margin:0 0 12px; letter-spacing:.2px; color:var(--text); }
+
+  .catHeader{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .catName{ display:flex; align-items:center; gap:8px; font-size:14px; font-weight:700; color:var(--text); }
+  .catPill{
+    font-size:11px; font-weight:500; color:var(--text);
+    padding:2px 8px; border-radius:999px;
+    background:var(--soft); border:1px solid var(--softBorder);
+  }
+  .catMore{
+    font-size:12px; font-weight:500; color:var(--muted);
+    text-decoration:none;
+    padding:6px 10px;
+    border-radius:999px;
+    border:1px solid var(--softBorder);
+    background:transparent;
+  }
+
+  .postRow{
+    display:flex; gap:12px;
+    overflow:auto;
+    padding:2px 2px 10px;
+    scroll-snap-type:x mandatory;
+    scroll-padding:2px;
+    -webkit-overflow-scrolling:touch;
+  }
+  .postRow::-webkit-scrollbar{height:6px}
+  .postRow::-webkit-scrollbar-thumb{background:#dde3ee;border-radius:999px}
+  body[data-theme="dark"] .postRow::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.18)}
+  .postRow::-webkit-scrollbar-track{background:transparent}
+
+  .postMini{
+    flex:0 0 240px;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow: var(--shadow);
+    scroll-snap-align:start;
+    transition:transform .12s ease;
+  }
+  .postMini:active{ transform:scale(.99); }
+  .postMini a{ display:block; color:inherit; text-decoration:none; }
+
+  .miniThumb{ width:100%; aspect-ratio:16/8.8; background:#f2f3f7; }
+  .miniBody{ padding:10px 10px 10px; }
+  .miniTitle{
+    font-size:13px; font-weight:700; line-height:1.25;
+    margin-bottom:6px; letter-spacing:.15px;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    color:var(--text);
+  }
+  .miniDesc{
+    font-size:11px; font-weight:300; color:var(--muted); line-height:1.4; margin-bottom:8px;
+    display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .miniMeta{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:10px; padding-top:8px; border-top:1px solid var(--border);
+  }
+  .miniLeft{ display:flex; align-items:center; gap:8px; min-width:0; }
+  .miniAvatar{ width:22px; height:22px; border-radius:999px; overflow:hidden; background:#e9edf6; flex:0 0 auto; }
+  .miniAuthor{
+    font-size:11px; font-weight:500; color:var(--text);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px;
+  }
+  .sub{ font-size:10px; font-weight:300; color:var(--muted); display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .miniDot{ width:3px; height:3px; border-radius:50%; background:#cbd5e1; display:inline-block; }
+  .miniRight{ display:flex; align-items:center; gap:6px; color:var(--muted); font-size:11px; flex:0 0 auto; }
+  .miniRight i{ font-size:12px; }
+
+  /* ===== Writers ===== */
+  .topWriters{ margin-top:8px; padding-bottom:18px; }
+  .writersHeader{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .writersTitle{ font-size:16px; font-weight:700; letter-spacing:.2px; color:var(--text); }
+  .writersViewAll{
+    font-size:12px; font-weight:500; color:var(--muted);
+    text-decoration:none; padding:6px 10px;
+    border-radius:999px; border:1px solid var(--softBorder); background:transparent;
+  }
+
+  .writerRow{
+    display:flex; gap:12px;
+    overflow-x:auto;
+    padding:4px 0 8px;
+    scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .writerRow::-webkit-scrollbar{display:none}
+
+  .writer{
+    flex:0 0 auto;
+    width:56px; height:56px;
+    border-radius:50%;
+    overflow:hidden;
+    background:#e9edf6;
+    box-shadow:0 6px 14px rgba(16,24,40,.08);
+    scroll-snap-align:start;
+  }
+  body[data-theme="dark"] .writer{ box-shadow: 0 16px 50px rgba(0,0,0,0.35); }
+
+  .scrollIndicator{
+    height:2px;
+    width:100%;
+    background:var(--track);
+    border-radius:999px;
+    overflow:hidden;
+    margin-top:6px;
+  }
+  .scrollThumb{
+    height:100%;
+    width:40%;
+    background:var(--thumb);
+    border-radius:999px;
+    transform:translateX(0);
+  }
+
+  @media(max-width:520px){
+    .pageBtn{ min-width:34px; height:34px; border-radius:11px; }
+    .postMini{ flex-basis:220px; }
+    .writer{ width:52px; height:52px; }
+  }
+</style>
+
+{% if trending %}
+<section class="trendWrap">
+  <div class="carousel" id="trendCarousel">
+    <div class="slides" id="slides">
+      {% for post in trending %}
+      <img
+        src="{{ url_for('static', filename='uploads/' + post.trending_thumbnail) }}"
+        class="{{ 'active' if loop.first else '' }}"
+        alt="{{ post.title }}"
+        data-title="{{ post.title }}"
+        data-link="{{ url_for('post_detail', post_id=post.id) }}"
+      >
+      {% endfor %}
+    </div>
+
+    <div class="overlay"></div>
+    <div class="slide-title" id="slideTitle">{{ trending[0].title if trending else '' }}</div>
+
+    <a class="link-icon" id="openLink" href="{{ url_for('post_detail', post_id=trending[0].id) }}" title="Read Article">
+      <span data-lucide="link-2"></span>
+    </a>
+
+    <div class="arrow left" id="prev" aria-label="Previous">
+      <span data-lucide="chevron-left"></span>
+    </div>
+    <div class="arrow right" id="next" aria-label="Next">
+      <span data-lucide="chevron-right"></span>
+    </div>
+
+    <div class="dots" id="dots"></div>
+  </div>
+</section>
+{% endif %}
+
+<main>
+  <div class="sectionHead">
+    <h2 class="sectionTitleHead">
+      <span data-lucide="clock"></span>
+      Latest
+    </h2>
+
+    <a class="viewAllLink" href="{{ url_for('all_posts') }}">
+      View all
+      <span data-lucide="arrow-right"></span>
+    </a>
+  </div>
+
+  <section class="latestList">
+    {% for post in latest %}
+    <article class="latestCard">
+      <a href="{{ url_for('post_detail', post_id=post.id) }}" style="text-decoration:none; color:inherit;">
+        <div class="thumb imgBox is-loading" data-imgbox>
+          {% if post.thumbnail %}
+            <img data-smartimg loading="lazy" src="{{ url_for('static', filename='uploads/' + post.thumbnail) }}" alt="{{ post.title }}">
+          {% else %}
+            <img data-smartimg loading="lazy" src="https://picsum.photos/900/520?random={{ post.id }}" alt="Default">
+          {% endif %}
+          <div class="imageShimmer"></div>
+        </div>
+      </a>
+
+      <div class="content">
+        <div class="badgeRow">
+          <span class="badge">Latest</span>
+          <span class="badge">{{ post.category }}</span>
+        </div>
+
+        <a href="{{ url_for('post_detail', post_id=post.id) }}" style="text-decoration:none; color:inherit;">
+          <h3 class="title">{{ post.title }}</h3>
+        </a>
+
+        <p class="excerpt">{{ post.excerpt[:120] }}...</p>
+
+        <div class="metaRow">
+          <div class="metaLeft">
+            <a href="{{ url_for('public_profile', username=post.author.username) }}"
+               style="text-decoration:none; display:flex; align-items:center; gap:8px;">
+              <div class="avatar imgBox is-loading" style="width:28px;height:28px;border-radius:50%" data-imgbox>
+                <img data-smartimg loading="lazy" src="{{ url_for('static', filename='uploads/' + post.author.profile_pic) }}" alt="{{ post.author.username }}">
+                <div class="imageShimmer"></div>
+              </div>
+              <div>
+                <div class="author">{{ post.author.username }}</div>
+                <div class="subMeta">
+                  <span>{{ post.date_posted.strftime('%b %d') }}</span>
+                  <span class="dotMini"></span>
+                  <span>Read</span>
+                </div>
+              </div>
+            </a>
+          </div>
+
+          <div class="metaRight">
+            <div class="comments"><i class="fa-regular fa-comment"></i><span>{{ post.comments|length }}</span></div>
+
+            {% if current_user.is_authenticated %}
+              <button class="bookmarkBtn" type="button" aria-label="Bookmark"
+                      onclick="toggleBookmark({{ post.id }}, this)">
+                <i class="{{ 'fa-solid fa-bookmark' if current_user in post.bookmarked_by else 'fa-regular fa-bookmark' }}"
+                   style="{{ 'color: #0d6efd;' if current_user in post.bookmarked_by else '' }}"></i>
+              </button>
+            {% else %}
+              <a href="{{ url_for('login') }}" class="bookmarkBtn" aria-label="Login to bookmark">
+                <i class="fa-regular fa-bookmark"></i>
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </article>
+    {% else %}
+      <div class="emptyState" style="text-align:center; margin-bottom:20px;">No latest posts found.</div>
+    {% endfor %}
+  </section>
+
+  <!-- ✅ Pagination preview -->
+  <nav class="pagination" aria-label="Pagination preview">
+    <a class="pageBtn" href="{{ url_for('all_posts', page=1) }}" aria-label="Previous page (preview)">
+      <span data-lucide="chevron-left"></span>
+    </a>
+    <a href="{{ url_for('all_posts', page=1) }}" class="pageBtn active">1</a>
+    <a href="{{ url_for('all_posts', page=2) }}" class="pageBtn">2</a>
+    <a href="{{ url_for('all_posts', page=3) }}" class="pageBtn">3</a>
+    <a class="pageBtn" href="{{ url_for('all_posts', page=2) }}" aria-label="Next page (preview)">
+      <span data-lucide="chevron-right"></span>
+    </a>
+  </nav>
+
+  <section class="loveSection">
+    <div class="sectionTitle">Posts You May Love</div>
+
+    {% if category_data %}
+      {% for cat_obj in category_data %}
+      <section style="margin-bottom: 24px;">
+        <div class="catHeader">
+          <div class="catName">
+            <span>{{ cat_obj.name }}</span>
+            <span class="catPill">Top</span>
+          </div>
+          <a class="catMore" href="#">View all</a>
+        </div>
+
+        <div class="postRow">
+          {% for post in cat_obj.posts %}
+          <article class="postMini">
+            <a href="{{ url_for('post_detail', post_id=post.id) }}">
+              <div class="miniThumb imgBox is-loading" data-imgbox>
+                {% if post.thumbnail %}
+                  <img data-smartimg data-delay="{{ loop.index * 200 }}" loading="lazy" src="{{ url_for('static', filename='uploads/' + post.thumbnail) }}" alt="">
+                {% else %}
+                  <img data-smartimg data-delay="{{ loop.index * 200 }}" loading="lazy" src="https://picsum.photos/800/450?random={{ post.id }}" alt="">
+                {% endif %}
+                <div class="imageShimmer"></div>
+              </div>
+
+              <div class="miniBody">
+                <div class="miniTitle">{{ post.title }}</div>
+                <div class="miniDesc">{{ post.excerpt[:50] }}...</div>
+
+                <div class="miniMeta">
+                  <div class="miniLeft">
+                    <div class="miniAvatar imgBox is-loading" data-imgbox>
+                      <img data-smartimg loading="lazy" src="{{ url_for('static', filename='uploads/' + post.author.profile_pic) }}" alt="">
+                      <div class="imageShimmer"></div>
+                    </div>
+                    <div>
+                      <div class="miniAuthor">{{ post.author.username }}</div>
+                      <div class="sub">
+                        <span>Read</span><span class="miniDot"></span><span>{{ post.date_posted.strftime('%b %d') }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="miniRight"><i class="fa-regular fa-comment"></i><span>{{ post.comments|length }}</span></div>
+                </div>
+              </div>
+            </a>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+      {% endfor %}
+    {% else %}
+      <div class="emptyState">No categories available.</div>
+    {% endif %}
+  </section>
+
+  <section class="topWriters">
+    <div class="writersHeader">
+      <div class="writersTitle">Top Writers</div>
+      <a class="writersViewAll" href="#">View all</a>
+    </div>
+
+    <div class="writerRow" id="writerRow">
+      {% for writer in top_writers %}
+      <a href="{{ url_for('public_profile', username=writer.username) }}"
+         class="writer imgBox is-loading"
+         data-imgbox
+         style="width:56px;height:56px;border-radius:50%; display:block;">
+        <img data-smartimg loading="lazy" src="{{ url_for('static', filename='uploads/' + writer.profile_pic) }}" alt="{{ writer.username }}">
+        <div class="imageShimmer"></div>
+      </a>
+      {% endfor %}
+    </div>
+
+    <div class="scrollIndicator" id="scrollIndicator" aria-hidden="true">
+      <div class="scrollThumb" id="scrollThumb"></div>
+    </div>
+  </section>
+</main>
+
+<!-- ✅ HOME ONLY SCRIPTS (base.html untouched) -->
+<script>
+  // lucide icons might already be created in base, but safe to re-run
+  if (window.lucide && lucide.createIcons) lucide.createIcons();
+
+  document.addEventListener("DOMContentLoaded", () => {
+    initSmartImages();
+    initHomeSlider();
+    initWritersIndicator();
+  });
+
+  function initSmartImages(){
+    const imgs = document.querySelectorAll("img[data-smartimg]");
+    imgs.forEach(img => {
+      const box = img.closest("[data-imgbox]");
+      if (box) { box.classList.add("is-loading"); box.classList.remove("is-loaded"); }
+
+      const delayAttr = img.getAttribute("data-delay");
+      if (delayAttr) {
+        const ms = Math.max(0, parseInt(delayAttr, 10) || 0);
+        const originalSrc = img.getAttribute("src");
+        if (originalSrc) {
+          img.removeAttribute("src");
+          setTimeout(() => img.setAttribute("src", originalSrc), ms);
+        }
+      }
+
+      if (img.complete && img.naturalWidth > 0) {
+        if (box) { box.classList.remove("is-loading"); box.classList.add("is-loaded"); }
+        return;
+      }
+
+      const done = () => {
+        if (!box) return;
+        box.classList.remove("is-loading");
+        box.classList.add("is-loaded");
+      };
+
+      img.addEventListener("load", done, { once:true });
+      img.addEventListener("error", () => {
+        if (!box) return;
+        box.classList.remove("is-loading");
+        box.classList.add("is-loaded");
+        img.style.opacity = "0";
+      }, { once:true });
+    });
+  }
+
+  function initHomeSlider(){
+    const slidesWrap = document.getElementById("slides");
+    const images = slidesWrap ? slidesWrap.querySelectorAll("img") : [];
+    const dotsBox = document.getElementById("dots");
+    const titleEl = document.getElementById("slideTitle");
+    const linkEl = document.getElementById("openLink");
+    const nextBtn = document.getElementById("next");
+    const prevBtn = document.getElementById("prev");
+
+    if (!images.length || !dotsBox || !titleEl || !linkEl) return;
+
+    const data = Array.from(images).map(img => ({
+      title: img.getAttribute("data-title") || "",
+      link: img.getAttribute("data-link") || "#"
+    }));
+
+    let index = 0;
+
+    // build dots
+    dotsBox.innerHTML = "";
+    data.forEach((_, i) => {
+      const d = document.createElement("div");
+      d.className = "dot" + (i === 0 ? " active" : "");
+      d.addEventListener("click", () => { index = i; update(); });
+      dotsBox.appendChild(d);
+    });
+    const dots = dotsBox.querySelectorAll(".dot");
+
+    function update(){
+      images.forEach((img, i) => img.classList.toggle("active", i === index));
+      dots.forEach((d, i) => d.classList.toggle("active", i === index));
+
+      titleEl.textContent = data[index]?.title || "";
+      linkEl.setAttribute("href", data[index]?.link || "#");
+    }
+
+    if (nextBtn) nextBtn.onclick = () => { index = (index + 1) % images.length; update(); };
+    if (prevBtn) prevBtn.onclick = () => { index = (index - 1 + images.length) % images.length; update(); };
+
+    // auto slide
+    setInterval(() => { index = (index + 1) % images.length; update(); }, 5000);
+
+    update();
+  }
+
+  function initWritersIndicator(){
+    const row = document.getElementById('writerRow');
+    const indicator = document.getElementById('scrollIndicator');
+    const thumb = document.getElementById('scrollThumb');
+    if (!row || !indicator || !thumb) return;
+
+    let rafId = null;
+
+    function sync(){
+      rafId = null;
+      const total = row.scrollWidth;
+      const view = row.clientWidth;
+      const maxScroll = total - view;
+
+      if (maxScroll <= 1) { indicator.style.display = 'none'; return; }
+      indicator.style.display = 'block';
+
+      const thumbWpx = Math.max(36, Math.round((view / total) * indicator.clientWidth));
+      thumb.style.width = thumbWpx + 'px';
+
+      const trackW = indicator.clientWidth - thumbWpx;
+      const x = Math.round((row.scrollLeft / maxScroll) * trackW);
+      thumb.style.transform = `translateX(${x}px)`;
+    }
+
+    function requestSync(){
+      if (rafId) return;
+      rafId = requestAnimationFrame(sync);
+    }
+
+    row.addEventListener('scroll', requestSync, { passive:true });
+    window.addEventListener('resize', requestSync);
+    requestSync();
+  }
+
+  // ✅ Bookmark API (same logic as post_detail, updates clicked icon)
+  function toggleBookmark(postId, btnEl) {
+    fetch(`/api/bookmark/${postId}`, { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        const icon = btnEl ? btnEl.querySelector('i') : null;
+        if (!icon) return;
+
+        if (data.status === 'added') {
+          icon.classList.remove('fa-regular');
+          icon.classList.add('fa-solid');
+          icon.style.color = '#0d6efd';
+        } else {
+          icon.classList.remove('fa-solid');
+          icon.classList.add('fa-regular');
+          icon.style.color = '';
+        }
+      })
+      .catch(() => {});
+  }
+</script>
+
+{% endblock %}

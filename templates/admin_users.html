@@ -1,0 +1,123 @@
+{% extends "base_admin.html" %}
+
+{% block content %}
+<style>
+    .filter-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .filter-btn {
+        padding: 8px 16px; border-radius: 99px; font-size: 13px; font-weight: 600;
+        text-decoration: none; color: #64748b; background: #fff; border: 1px solid #e2e8f0;
+        transition: 0.2s;
+    }
+    .filter-btn:hover { background: #f8fafc; }
+    .filter-btn.active { background: #0f172a; color: #fff; border-color: #0f172a; }
+
+    .user-card {
+        background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+        padding: 15px; display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 12px; transition: 0.2s;
+    }
+    .user-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+
+    .u-info { display: flex; align-items: center; gap: 12px; }
+    .u-img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; background: #f1f5f9; }
+    .u-name { font-weight: 700; font-size: 14px; color: #0f172a; }
+    .u-role { font-size: 11px; color: #64748b; }
+
+    .badge-status { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .bg-active { background: #dcfce7; color: #166534; }
+    .bg-suspended { background: #fee2e2; color: #991b1b; }
+    .bg-pending { background: #ffedd5; color: #9a3412; }
+
+    .action-btn {
+        width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e2e8f0;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: #fff; color: #334155; cursor: pointer; transition: 0.2s;
+    }
+    .action-btn:hover { background: #f1f5f9; }
+    .action-btn.danger:hover { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
+    .action-btn.success:hover { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+</style>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold mb-0"><i data-lucide="users"></i> User Management</h4>
+
+        <form action="{{ url_for('admin_users') }}" method="GET" class="d-flex" style="max-width: 300px;">
+            <input type="hidden" name="filter" value="{{ filter_type }}">
+            <input type="text" name="q" class="form-control form-control-sm rounded-pill px-3" placeholder="Search user..." value="{{ search_query }}">
+        </form>
+    </div>
+
+    <div class="filter-tabs">
+        <a href="{{ url_for('admin_users', filter='all') }}" class="filter-btn {{ 'active' if filter_type == 'all' else '' }}">All Users</a>
+        <a href="{{ url_for('admin_users', filter='active') }}" class="filter-btn {{ 'active' if filter_type == 'active' else '' }}">Active</a>
+        <a href="{{ url_for('admin_users', filter='pending') }}" class="filter-btn {{ 'active' if filter_type == 'pending' else '' }}">
+            Pending Writers 
+            {% if filter_type != 'pending' %}
+            <span class="badge bg-danger rounded-pill" style="font-size: 9px;">!</span>
+            {% endif %}
+        </a>
+        <a href="{{ url_for('admin_users', filter='suspended') }}" class="filter-btn {{ 'active' if filter_type == 'suspended' else '' }}">Suspended</a>
+    </div>
+
+    <div class="row">
+        {% for user in users %}
+        <div class="col-md-6 col-lg-4">
+            <div class="user-card">
+                <div class="u-info">
+                    <img src="{{ url_for('static', filename='uploads/' + user.profile_pic) }}" class="u-img">
+                    <div>
+                        <div class="u-name">{{ user.name or user.username }}</div>
+                        <div class="u-role">
+                            {{ user.role.title() }} 
+                            {% if user.is_suspended %}
+                                <span class="badge-status bg-suspended ms-1">Suspended</span>
+                            {% elif user.is_writer_applicant %}
+                                <span class="badge-status bg-pending ms-1">Pending</span>
+                            {% else %}
+                                <span class="badge-status bg-active ms-1">Active</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    {% if user.role != 'admin' %}
+
+                        {% if user.is_suspended %}
+                            <a href="{{ url_for('activate_user', user_id=user.id) }}" class="action-btn success" title="Activate">
+                                <i data-lucide="check-circle" style="width: 16px;"></i>
+                            </a>
+                        {% else %}
+                            <a href="{{ url_for('suspend_user', user_id=user.id) }}" class="action-btn danger" title="Suspend" onclick="return confirm('Suspend this user?');">
+                                <i data-lucide="ban" style="width: 16px;"></i>
+                            </a>
+                        {% endif %}
+
+                        {% if user.role == 'user' %}
+                            <a href="{{ url_for('make_writer', user_id=user.id) }}" class="action-btn" title="Make Writer" style="color: #2563eb;">
+                                <i data-lucide="pen-tool" style="width: 16px;"></i>
+                            </a>
+                        {% elif user.role == 'writer' %}
+                            <a href="{{ url_for('make_user_role', user_id=user.id) }}" class="action-btn" title="Demote to User">
+                                <i data-lucide="user-minus" style="width: 16px;"></i>
+                            </a>
+                        {% endif %}
+
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center py-5 text-muted">
+            <i data-lucide="search-x" style="width: 40px; height: 40px; opacity: 0.5;"></i>
+            <p class="mt-2">No users found matching your criteria.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}

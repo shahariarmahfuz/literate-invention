@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block content %}
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Dashboard ({{ current_user.role|upper }})</h2>
+        {% if current_user.role == 'writer' %}
+            <a href="/create" class="btn btn-primary">+ Create Post</a>
+        {% endif %}
+    </div>
+
+    {% if current_user.role == 'user' %}
+        <div class="card text-center p-5">
+            {% if current_user.is_writer_applicant %}
+                <h4 class="text-info">Application Sent</h4>
+                <p>Please wait for Admin approval to become a Writer.</p>
+            {% else %}
+                <h4>Want to write blogs?</h4>
+                <p>Apply to become a verified writer.</p>
+                <a href="/apply-writer" class="btn btn-success btn-lg">Request Writer Access</a>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {% if current_user.role == 'admin' %}
+
+        <div class="card mb-4 border-info">
+            <div class="card-header bg-info text-white">
+                <h5>👤 Writer Requests</h5>
+            </div>
+            <div class="card-body">
+                {% if writer_applicants %}
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in writer_applicants %}
+                            <tr>
+                                <td>{{ user.username }}</td>
+                                <td>
+                                    <a href="/approve-writer/{{ user.id }}" class="btn btn-success btn-sm">Approve</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="text-muted">No pending writer requests.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mb-4 border-warning">
+            <div class="card-header bg-warning">
+                <h5>📝 Pending Posts Reviews</h5>
+            </div>
+            <div class="card-body">
+                {% if pending_posts %}
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Author</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for post in pending_posts %}
+                            <tr>
+                                <td>{{ post.title }}</td>
+                                <td>{{ post.author.username }}</td>
+                                <td>
+                                    <a href="/post/{{ post.id }}" class="btn btn-primary btn-sm" target="_blank">View</a>
+                                    <a href="/approve/{{ post.id }}" class="btn btn-success btn-sm">Approve</a>
+                                    <a href="/reject/{{ post.id }}" class="btn btn-danger btn-sm">Reject</a>
+                                    <a href="/delete/{{ post.id }}" class="btn btn-dark btn-sm">Delete</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="text-muted">No pending posts.</p>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+
+    {% if current_user.role == 'writer' %}
+        <div class="card">
+            <div class="card-header">My Posts</div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for post in my_posts %}
+                        <tr>
+                            <td>
+                                <a href="/post/{{ post.id }}">{{ post.title }}</a>
+                            </td>
+                            <td>
+                                {% if post.status == 'active' %}
+                                    <span class="badge bg-success">Published</span>
+                                {% elif post.status == 'rejected' %}
+                                    <span class="badge bg-danger">Rejected</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="/edit/{{ post.id }}" class="btn btn-sm btn-info">Edit</a>
+                                <a href="/delete/{{ post.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="text-center">No posts found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+{% endblock %}

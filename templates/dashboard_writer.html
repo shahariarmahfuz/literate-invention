@@ -1,0 +1,245 @@
+{% extends layout %}
+
+{% block content %}
+
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<div id="writer-dash-ui">
+<style>
+    /* Scoped CSS */
+    #writer-dash-ui {
+        font-family: 'Outfit', sans-serif;
+        --bg: #f1f5f9;
+        --text: #0f172a;
+        --muted: #64748b;
+        --card: #ffffff;
+        --border: #eef0f6;
+        --soft: #f8fafc;
+        --softBorder: #e2e8f0;
+        --softHover: rgba(15,23,42,0.06);
+    }
+    body[data-theme="dark"] #writer-dash-ui {
+        --bg: #0A0A0A;
+        --text: #e5e7eb;
+        --muted: #a1a1aa;
+        --card: rgba(255,255,255,0.06);
+        --border: rgba(255,255,255,0.10);
+        --soft: rgba(255,255,255,0.06);
+        --softBorder: rgba(255,255,255,0.12);
+        --softHover: rgba(255,255,255,0.08);
+    }
+
+    #writer-dash-ui .wrap {
+      max-width: 600px; margin: 0 auto; padding: 10px 0;
+    }
+
+    /* Summary Card */
+    #writer-dash-ui .writerSummary {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: 0 4px 12px rgba(16, 24, 40, .03);
+      padding: 16px; margin-bottom: 24px;
+    }
+
+    #writer-dash-ui .writerHead {
+      display: flex; align-items: flex-start; gap: 14px;
+    }
+
+    #writer-dash-ui .miniAvatar {
+      width: 48px; height: 48px; border-radius: 999px; overflow: hidden;
+      border: 1px solid var(--softBorder);
+      background: rgba(15, 23, 42, 0.06); flex: 0 0 auto;
+    }
+    #writer-dash-ui .miniAvatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    #writer-dash-ui .writerName {
+      font-size: 16px; font-weight: 700; /* Bold */
+      letter-spacing: -0.2px; line-height: 1.2;
+      color: var(--text);
+    }
+
+    #writer-dash-ui .writerBio {
+      margin-top: 4px; font-size: 13px; font-weight: 400; /* Regular */
+      color: var(--muted); line-height: 1.5;
+    }
+
+    #writer-dash-ui .writerIntro {
+      margin-top: 14px; border-top: 1px solid var(--border);
+      padding-top: 12px; font-size: 13px; font-weight: 300; /* Light */
+      color: var(--muted); line-height: 1.6;
+    }
+    #writer-dash-ui .writerIntro b { font-weight: 600; color: var(--text); }
+
+    /* Action Buttons */
+    #writer-dash-ui .btnRow {
+      margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap;
+    }
+
+    #writer-dash-ui .action-btn {
+      height: 36px; padding: 0 16px; border-radius: 999px;
+      border: 1px solid var(--softBorder);
+      background: rgba(255, 255, 255, 0.35);
+      color: var(--text);
+      font-size: 13px; font-weight: 600; /* Semi-Bold */
+      cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+      user-select: none; text-decoration: none; transition: 0.1s;
+    }
+    body[data-theme="dark"] #writer-dash-ui .action-btn { background: rgba(255, 255, 255, 0.06); }
+
+    #writer-dash-ui .action-btn:hover { background: var(--softHover); }
+    #writer-dash-ui .action-btn:active { transform: scale(.98); }
+
+    #writer-dash-ui .action-btn.primary {
+      background: #0f172a; color: #fff; border: 1px solid rgba(15, 23, 42, 0.30);
+    }
+    body[data-theme="dark"] #writer-dash-ui .action-btn.primary {
+        background: rgba(255, 255, 255, 0.14); border-color: rgba(255,255,255,0.1);
+    }
+
+    #writer-dash-ui .action-btn.danger {
+      background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.2); color: #ef4444;
+    }
+
+    /* Section Title */
+    #writer-dash-ui .sectionTitle {
+      margin: 0 4px 12px; font-size: 13px; font-weight: 700; /* Bold */
+      color: var(--text); display: flex; align-items: center; justify-content: space-between;
+    }
+    #writer-dash-ui .sectionTitle small { font-weight: 300; color: var(--muted); }
+
+    /* Stats Grid */
+    #writer-dash-ui .statGrid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    }
+    @media(max-width: 500px) { #writer-dash-ui .statGrid { grid-template-columns: 1fr; } }
+
+    #writer-dash-ui .statCard {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 18px; padding: 14px;
+      box-shadow: 0 4px 12px rgba(16, 24, 40, .03);
+      display: flex; align-items: flex-start; gap: 12px;
+      text-decoration: none; color: inherit; transition: transform 0.2s;
+    }
+    #writer-dash-ui .statCard:hover { transform: translateY(-2px); border-color: #cbd5e1; }
+
+    #writer-dash-ui .statIcon {
+      width: 38px; height: 38px; border-radius: 12px;
+      border: 1px solid var(--softBorder);
+      background: rgba(15, 23, 42, 0.04);
+      display: flex; align-items: center; justify-content: center;
+      flex: 0 0 auto; color: var(--text);
+    }
+    body[data-theme="dark"] #writer-dash-ui .statIcon { background: rgba(255, 255, 255, 0.06); }
+    #writer-dash-ui .statIcon svg { width: 18px; height: 18px; stroke-width: 1.8; }
+
+    #writer-dash-ui .statMeta { min-width: 0; }
+
+    #writer-dash-ui .statValue {
+      font-size: 18px; font-weight: 700; /* Bold (Not 900) */
+      letter-spacing: -0.3px; line-height: 1.1; color: var(--text);
+    }
+
+    #writer-dash-ui .statLabel {
+      margin-top: 6px; font-size: 12px; font-weight: 600; /* Semi-Bold */
+      color: var(--text); display: flex; align-items: center; gap: 6px;
+    }
+
+    #writer-dash-ui .statSub {
+      margin-top: 4px; font-size: 11px; font-weight: 300; /* Light */
+      color: var(--muted); line-height: 1.4;
+    }
+
+    #writer-dash-ui .badgeDot {
+      width: 6px; height: 6px; border-radius: 999px; display: inline-block;
+      background: rgba(99, 102, 241, 0.80);
+    }
+    #writer-dash-ui .badgeDot.ok { background: #22c55e; }
+    #writer-dash-ui .badgeDot.warn { background: #f59e0b; }
+    #writer-dash-ui .badgeDot.bad { background: #ef4444; }
+</style>
+
+<div class="wrap">
+    <section class="writerSummary">
+      <div class="writerHead">
+        <div class="miniAvatar">
+          <img src="{{ url_for('static', filename='uploads/' + current_user.profile_pic) }}" alt="Avatar">
+        </div>
+
+        <div style="min-width:0;">
+          <div class="writerName">{{ current_user.name or current_user.username }}</div>
+          <div class="writerBio">
+            {{ current_user.bio or "Update your profile to add a bio." }}
+          </div>
+        </div>
+      </div>
+
+      <div class="writerIntro">
+        Welcome back, <b>{{ current_user.username }}</b>. Here is your content overview.
+      </div>
+
+      <div class="btnRow">
+        <a href="{{ url_for('create_post') }}" class="action-btn primary">
+          <span data-lucide="plus"></span> Add Post
+        </a>
+        <a href="{{ url_for('manage_posts') }}" class="action-btn">
+          <span data-lucide="file-text"></span> Manage Posts
+        </a>
+        <a href="{{ url_for('user_profile') }}" class="action-btn danger">
+          <span data-lucide="settings"></span> Settings
+        </a>
+      </div>
+    </section>
+
+    <div class="sectionTitle">
+      <span>Statistics</span>
+      <small>Real-time</small>
+    </div>
+
+    <section class="statGrid">
+
+      <a href="{{ url_for('manage_posts') }}" class="statCard">
+        <div class="statIcon"><span data-lucide="globe"></span></div>
+        <div class="statMeta">
+          <div class="statValue">{{ active }}</div>
+          <div class="statLabel"><span class="badgeDot ok"></span>Published</div>
+          <div class="statSub">Live posts</div>
+        </div>
+      </a>
+
+      <a href="{{ url_for('manage_posts') }}" class="statCard">
+        <div class="statIcon"><span data-lucide="clock"></span></div>
+        <div class="statMeta">
+          <div class="statValue">{{ pending }}</div>
+          <div class="statLabel"><span class="badgeDot warn"></span>Pending</div>
+          <div class="statSub">Under review</div>
+        </div>
+      </a>
+
+      <a href="{{ url_for('manage_posts') }}" class="statCard">
+        <div class="statIcon"><span data-lucide="pencil"></span></div>
+        <div class="statMeta">
+          <div class="statValue">{{ draft }}</div>
+          <div class="statLabel"><span class="badgeDot"></span>Drafts</div>
+          <div class="statSub">Saved work</div>
+        </div>
+      </a>
+
+      <a href="{{ url_for('manage_posts') }}" class="statCard">
+        <div class="statIcon"><span data-lucide="x-circle"></span></div>
+        <div class="statMeta">
+          <div class="statValue">{{ rejected }}</div>
+          <div class="statLabel"><span class="badgeDot bad"></span>Rejected</div>
+          <div class="statSub">Requires fix</div>
+        </div>
+      </a>
+
+    </section>
+</div>
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+
+{% endblock %}
