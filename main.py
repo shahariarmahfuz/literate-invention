@@ -277,13 +277,15 @@ def index():
         cat_posts = BlogPost.query.filter_by(status='active', category=cat_name).order_by(BlogPost.date_posted.desc()).limit(3).all()
         category_data.append({'name': cat_name, 'posts': cat_posts})
     top_writers = User.query.filter_by(role='writer').limit(5).all()
-    return render_template('index.html', trending=trending, latest=latest, category_data=category_data, top_writers=top_writers)
+    latest_reading_times = {post.id: estimate_reading_time(post.content) for post in latest}
+    return render_template('index.html', trending=trending, latest=latest, category_data=category_data, top_writers=top_writers, latest_reading_times=latest_reading_times)
 
 @app.route('/all-posts')
 def all_posts():
     page = request.args.get('page', 1, type=int)
     pagination = BlogPost.query.filter_by(status='active').order_by(BlogPost.date_posted.desc()).paginate(page=page, per_page=20, error_out=False)
-    return render_template('all_posts.html', pagination=pagination)
+    reading_times = {post.id: estimate_reading_time(post.content) for post in pagination.items}
+    return render_template('all_posts.html', pagination=pagination, reading_times=reading_times)
 
 @app.route('/post/<int:post_id>')
 def post_detail(post_id):
