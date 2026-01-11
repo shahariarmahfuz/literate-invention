@@ -324,7 +324,7 @@
     <a class="writoMenuItem {{ 'active' if request.endpoint == 'admin_users' else '' }}" href="{{ url_for('admin_users') }}">
       <span data-lucide="users"></span><span>Manage Writers</span>
     </a>
-    <a class="writoMenuItem {{ 'active' if request.endpoint == 'admin_post_reports' else '' }}" href="{{ url_for('admin_post_reports') }}">
+    <a class="writoMenuItem {{ 'active' if request.endpoint == 'admin_post_review' else '' }}" href="{{ url_for('admin_post_review') }}">
       <span data-lucide="scan"></span><span>Post Review</span>
     </a>
     <a class="writoMenuItem {{ 'active' if request.endpoint == 'admin_comment_reports' else '' }}" href="{{ url_for('admin_comment_reports') }}">

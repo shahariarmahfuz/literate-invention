@@ -472,6 +472,13 @@ def admin_site_status():
         last_update=now.strftime('%H:%M')
     )
 
+@app.route('/admin/posts/review')
+@login_required
+def admin_post_review():
+    if current_user.role != 'admin': return redirect(url_for('index'))
+    pending_posts = BlogPost.query.filter_by(status='pending').order_by(BlogPost.date_posted.desc()).all()
+    return render_template('admin_post_review.html', posts=pending_posts)
+
 @app.route('/admin/audit-log')
 @login_required
 def admin_audit_log():
