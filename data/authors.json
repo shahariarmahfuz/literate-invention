@@ -1,0 +1,16 @@
+[
+  {
+    "id": "author-1",
+    "name": "Avery Sinclair",
+    "bio": "Senior editor focused on thoughtful product stories and user experience.",
+    "avatar": "/images/placeholder.svg",
+    "role": "Editor"
+  },
+  {
+    "id": "author-2",
+    "name": "Rowan Patel",
+    "bio": "Full-stack engineer writing about web performance and design systems.",
+    "avatar": "/images/placeholder.svg",
+    "role": "Contributor"
+  }
+]

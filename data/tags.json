@@ -1,0 +1,5 @@
+[
+  { "id": "tag-nextjs", "slug": "nextjs", "name": "Next.js" },
+  { "id": "tag-ux", "slug": "ux", "name": "UX" },
+  { "id": "tag-performance", "slug": "performance", "name": "Performance" }
+]

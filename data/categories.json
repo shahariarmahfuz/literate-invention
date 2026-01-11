@@ -1,0 +1,14 @@
+[
+  {
+    "id": "cat-design",
+    "slug": "design",
+    "name": "Design",
+    "description": "Interfaces, typography, and visual systems."
+  },
+  {
+    "id": "cat-engineering",
+    "slug": "engineering",
+    "name": "Engineering",
+    "description": "Architecture, performance, and tooling."
+  }
+]

@@ -1,0 +1,50 @@
+[
+  {
+    "id": "post-1",
+    "slug": "designing-calm-interfaces",
+    "title": "Designing Calm Interfaces",
+    "excerpt": "Small layout decisions that make readers feel at ease.",
+    "contentHtml": "<p>Calm interfaces reward attention. They reduce friction by balancing contrast, spacing, and typography.</p><h2>Make space to breathe</h2><p>Use generous line-height, stable alignment, and a clear hierarchy to keep the reader oriented.</p>",
+    "coverImage": "/images/placeholder.svg",
+    "authorId": "author-1",
+    "categories": ["design"],
+    "tags": ["ux"],
+    "publishedAt": "2024-04-15T09:00:00Z",
+    "updatedAt": "2024-04-20T12:00:00Z",
+    "featured": true,
+    "trending": true,
+    "readingTime": "4 min read"
+  },
+  {
+    "id": "post-2",
+    "slug": "nextjs-content-pipeline",
+    "title": "A Lightweight Content Pipeline with Next.js",
+    "excerpt": "How to keep JSON content fast, searchable, and cache-friendly.",
+    "contentHtml": "<p>JSON-first content can scale when you pair it with thoughtful caching and small helper utilities.</p><h2>Cache intentionally</h2><p>Use ISR to keep pages fresh without rebuilding on every change.</p>",
+    "coverImage": "/images/placeholder.svg",
+    "authorId": "author-2",
+    "categories": ["engineering"],
+    "tags": ["nextjs", "performance"],
+    "publishedAt": "2024-05-08T10:30:00Z",
+    "updatedAt": "2024-05-10T08:15:00Z",
+    "featured": true,
+    "trending": false,
+    "readingTime": "6 min read"
+  },
+  {
+    "id": "post-3",
+    "slug": "performance-budgeting",
+    "title": "Performance Budgeting for Storytelling Sites",
+    "excerpt": "Set realistic performance budgets while keeping your brand visuals intact.",
+    "contentHtml": "<p>Performance budgets work best when they protect the most important brand assets.</p><h2>Balance fidelity and speed</h2><p>Start by keeping images responsive and validating every script you ship.</p>",
+    "coverImage": "/images/placeholder.svg",
+    "authorId": "author-2",
+    "categories": ["engineering"],
+    "tags": ["performance"],
+    "publishedAt": "2024-06-02T07:45:00Z",
+    "updatedAt": "2024-06-02T07:45:00Z",
+    "featured": false,
+    "trending": true,
+    "readingTime": "5 min read"
+  }
+]
