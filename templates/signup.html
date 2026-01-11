@@ -1,23 +1,154 @@
 {% extends "base_auth.html" %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card p-4 shadow-sm">
-            <h3 class="text-center mb-3">Create Account</h3>
-            <form method="POST">
-                <div class="mb-3">
-                    <label>Username</label>
-                    <input type="text" name="username" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label>Password</label>
-                    <input type="password" name="password" class="form-control" required>
-                </div>
-                <button type="submit" class="btn btn-success w-100">Sign Up</button>
-            </form>
-            <p class="mt-3 text-center">Already have an account? <a href="/login">Login</a></p>
-        </div>
+<style>
+  .wrap{max-width:520px;margin:0 auto;padding:14px}
+  .authCard{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:18px;
+    box-shadow:0 6px 18px rgba(16,24,40,.04);
+    overflow:hidden;
+  }
+  .authHead{
+    padding:14px 16px;
+    border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background: rgba(255,255,255,0.20);
+  }
+  body[data-theme="dark"] .authHead{background: rgba(255,255,255,0.04)}
+  .authTitle{
+    display:flex;align-items:center;gap:10px;
+    font-size:13px;font-weight:800;
+  }
+  .authBody{padding:14px 16px}
+
+  .field{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+  .label{font-size:12px;font-weight:800;display:flex;align-items:center;gap:8px}
+  .label svg{width:16px;height:16px;stroke-width:1.6}
+
+  .input{
+    width:100%;
+    height:42px;
+    border-radius:14px;
+    border:1px solid rgba(0,0,0,0.10);
+    background: rgba(255,255,255,0.55);
+    padding:0 12px;
+    font-family:inherit;
+    font-size:13px;
+    color:var(--text);
+    outline:none;
+  }
+  body[data-theme="dark"] .input{
+    border:1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.06);
+  }
+
+  .row{
+    margin-top:12px;
+    display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;
+    font-size:12px;color:var(--muted);font-weight:300;
+  }
+
+  .check{
+    display:inline-flex;align-items:flex-start;gap:10px;cursor:pointer;user-select:none;
+  }
+  .check input{margin-top:2px;accent-color:#0f172a}
+  body[data-theme="dark"] .check input{accent-color:#e5e7eb}
+
+  .btnRow{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap}
+  .btn{
+    height:40px;
+    padding:0 14px;
+    border-radius:999px;
+    border:1px solid var(--softBorder);
+    background: rgba(255,255,255,0.35);
+    color:var(--text);
+    font-size:12px;
+    font-weight:800;
+    cursor:pointer;
+    display:inline-flex;align-items:center;gap:8px;
+    -webkit-tap-highlight-color: transparent;
+    text-decoration:none;
+  }
+  body[data-theme="dark"] .btn{background: rgba(255,255,255,0.06)}
+  .btn:active{transform:scale(.98)}
+  .btn.primary{
+    background:#0f172a;
+    color:#fff;
+    border:1px solid rgba(15,23,42,0.30);
+  }
+  body[data-theme="dark"] .btn.primary{
+    background: rgba(255,255,255,0.14);
+    border:1px solid rgba(255,255,255,0.16);
+    color: var(--text);
+  }
+
+  .link{
+    color:var(--text);
+    text-decoration:none;
+    font-weight:700;
+  }
+  .link:hover{opacity:.9}
+
+  .miniNote{
+    margin-top:10px;
+    font-size:12px;
+    color:var(--muted);
+    font-weight:300;
+    line-height:1.6;
+  }
+</style>
+
+<main class="wrap">
+  <section class="authCard" aria-label="Sign up form">
+    <div class="authHead">
+      <div class="authTitle"><span data-lucide="user-plus"></span> Sign Up</div>
+      <a class="link" href="{{ url_for('login') }}">Login</a>
     </div>
-</div>
+
+    <div class="authBody">
+      <form method="POST" action="{{ url_for('signup') }}">
+        <div class="field">
+          <div class="label"><span data-lucide="badge"></span> Username</div>
+          <input class="input" name="username" type="text" placeholder="Your username" autocomplete="username" required>
+        </div>
+
+        <div class="field">
+          <div class="label"><span data-lucide="lock"></span> Password</div>
+          <input class="input" name="password" type="password" placeholder="Create password" autocomplete="new-password" required>
+        </div>
+
+        <div class="row">
+          <label class="check">
+            <input id="terms" type="checkbox" required>
+            <span>
+              I agree to the
+              <a class="link" href="{{ url_for('terms') }}">Terms</a>
+              &amp;
+              <a class="link" href="{{ url_for('privacy') }}">Privacy</a>.
+            </span>
+          </label>
+        </div>
+
+        <div class="btnRow">
+          <button class="btn primary" type="submit">
+            <span data-lucide="user-plus"></span> Create Account
+          </button>
+          <a class="btn" href="{{ url_for('login') }}">
+            <span data-lucide="log-in"></span> Go to Login
+          </a>
+        </div>
+
+        <div class="miniNote">
+          Create your Writo account to start writing and sharing.
+        </div>
+      </form>
+    </div>
+  </section>
+</main>
+
+<script>
+  lucide.createIcons();
+</script>
 {% endblock %}

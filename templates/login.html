@@ -1,38 +1,149 @@
 {% extends "base_auth.html" %}
 
 {% block content %}
-<form method="POST" action="{{ url_for('login') }}">
+<style>
+  .wrap{max-width:520px;margin:0 auto;padding:14px}
+  .authCard{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:18px;
+    box-shadow:0 6px 18px rgba(16,24,40,.04);
+    overflow:hidden;
+  }
+  .authHead{
+    padding:14px 16px;
+    border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background: rgba(255,255,255,0.20);
+  }
+  body[data-theme="dark"] .authHead{background: rgba(255,255,255,0.04)}
+  .authTitle{
+    display:flex;align-items:center;gap:10px;
+    font-size:13px;font-weight:800;
+  }
+  .authBody{padding:14px 16px}
 
-    <div class="mb-3">
-        <label class="form-label">Username</label>
-        <div class="input-group">
-            <span class="input-group-text bg-light border-end-0 rounded-start-4 ps-3">
-                <i data-lucide="user" style="width: 18px; opacity: 0.6;"></i>
-            </span>
-            <input type="text" name="username" class="form-control border-start-0 rounded-end-4" placeholder="Enter your username" required>
+  .field{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+  .label{font-size:12px;font-weight:800;display:flex;align-items:center;gap:8px}
+  .label svg{width:16px;height:16px}
+
+  .input{
+    width:100%;
+    height:42px;
+    border-radius:14px;
+    border:1px solid rgba(0,0,0,0.10);
+    background: rgba(255,255,255,0.55);
+    padding:0 12px;
+    font-family:inherit;
+    font-size:13px;
+    color:var(--text);
+    outline:none;
+  }
+  body[data-theme="dark"] .input{
+    border:1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.06);
+  }
+
+  .row{
+    margin-top:12px;
+    display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+    font-size:12px;color:var(--muted);font-weight:300;
+  }
+  .check{
+    display:inline-flex;align-items:center;gap:10px;cursor:pointer;user-select:none;
+  }
+  .check input{accent-color:#0f172a}
+  body[data-theme="dark"] .check input{accent-color:#e5e7eb}
+
+  .btnRow{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap}
+  .btn{
+    height:40px;
+    padding:0 14px;
+    border-radius:999px;
+    border:1px solid var(--softBorder);
+    background: rgba(255,255,255,0.35);
+    color:var(--text);
+    font-size:12px;
+    font-weight:800;
+    cursor:pointer;
+    display:inline-flex;align-items:center;gap:8px;
+    -webkit-tap-highlight-color: transparent;
+    text-decoration:none;
+  }
+  body[data-theme="dark"] .btn{background: rgba(255,255,255,0.06)}
+  .btn:active{transform:scale(.98)}
+  .btn.primary{
+    background:#0f172a;
+    color:#fff;
+    border:1px solid rgba(15,23,42,0.30);
+  }
+  body[data-theme="dark"] .btn.primary{
+    background: rgba(255,255,255,0.14);
+    border:1px solid rgba(255,255,255,0.16);
+    color: var(--text);
+  }
+
+  .link{
+    color:var(--text);
+    text-decoration:none;
+    font-weight:700;
+  }
+  .link:hover{opacity:.9}
+
+  .miniNote{
+    margin-top:10px;
+    font-size:12px;
+    color:var(--muted);
+    font-weight:300;
+    line-height:1.6;
+  }
+</style>
+
+<main class="wrap">
+  <section class="authCard" aria-label="Login form">
+    <div class="authHead">
+      <div class="authTitle"><span data-lucide="log-in"></span> Login</div>
+      <a class="link" href="{{ url_for('signup') }}">Sign Up</a>
+    </div>
+
+    <div class="authBody">
+      <form method="POST" action="{{ url_for('login') }}">
+        <div class="field">
+          <div class="label"><span data-lucide="mail"></span> Username</div>
+          <input class="input" name="username" type="text" placeholder="Enter your username" autocomplete="username" required>
         </div>
-    </div>
 
-    <div class="mb-4">
-        <label class="form-label">Password</label>
-        <div class="input-group">
-            <span class="input-group-text bg-light border-end-0 rounded-start-4 ps-3">
-                <i data-lucide="lock" style="width: 18px; opacity: 0.6;"></i>
-            </span>
-            <input type="password" name="password" class="form-control border-start-0 rounded-end-4" placeholder="Enter your password" required>
+        <div class="field">
+          <div class="label"><span data-lucide="lock"></span> Password</div>
+          <input class="input" name="password" type="password" placeholder="••••••••" autocomplete="current-password" required>
         </div>
-    </div>
 
-    <button type="submit" class="btn btn-primary">Sign In</button>
+        <div class="row">
+          <label class="check">
+            <input id="remember" type="checkbox">
+            <span>Remember me</span>
+          </label>
+          <a class="link" href="{{ url_for('login') }}" onclick="return false;">Forgot password?</a>
+        </div>
 
-    <div class="text-center mt-4 pt-2 border-top">
-        <p class="small text-muted mb-0">
-            Don't have an account? 
-            <a href="{{ url_for('signup') }}" class="auth-link">Create Account</a>
-        </p>
-        <p class="mt-2">
-            <a href="/" class="text-muted small text-decoration-none">← Back to Home</a>
-        </p>
+        <div class="btnRow">
+          <button class="btn primary" type="submit">
+            <span data-lucide="log-in"></span> Login
+          </button>
+          <a class="btn" href="{{ url_for('signup') }}">
+            <span data-lucide="user-plus"></span> Create account
+          </a>
+        </div>
+
+        <div class="miniNote">
+          Use your Writo username and password to continue.
+        </div>
+      </form>
     </div>
-</form>
+  </section>
+</main>
+
+<script>
+  lucide.createIcons();
+</script>
 {% endblock %}
