@@ -110,8 +110,18 @@
     <div class="authBody">
       <form method="POST" action="{{ url_for('signup') }}">
         <div class="field">
+          <div class="label"><span data-lucide="user"></span> Full Name</div>
+          <input class="input" name="full_name" type="text" placeholder="Your full name" autocomplete="name" required>
+        </div>
+
+        <div class="field">
           <div class="label"><span data-lucide="badge"></span> Username</div>
           <input class="input" name="username" type="text" placeholder="Your username" autocomplete="username" required>
+        </div>
+
+        <div class="field">
+          <div class="label"><span data-lucide="mail"></span> Email</div>
+          <input class="input" name="email" type="email" placeholder="you@example.com" autocomplete="email" required>
         </div>
 
         <div class="field">
