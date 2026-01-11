@@ -395,7 +395,8 @@ def dashboard_admin():
     if current_user.role != 'admin': return redirect(url_for('index'))
     return render_template('dashboard_admin.html', 
                            pending_posts=BlogPost.query.filter_by(status='pending').all(), 
-                           writer_applicants=User.query.filter_by(is_writer_applicant=True, role='user').all())
+                           writer_applicants=User.query.filter_by(is_writer_applicant=True, role='user').all(),
+                           post_report_count=PostReport.query.count())
 
 @app.route('/admin/users')
 @login_required
