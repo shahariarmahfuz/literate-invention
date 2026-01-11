@@ -128,7 +128,7 @@ def load_user(user_id):
 @app.context_processor
 def inject_layout():
     if request.endpoint == 'post_detail': return dict(layout='base_post.html')
-    if request.endpoint in ['index', 'public_profile', 'all_posts']: return dict(layout='base_user.html')
+    if request.endpoint in ['index', 'public_profile', 'all_posts', 'writers']: return dict(layout='base_user.html')
     if not current_user.is_authenticated: return dict(layout='base_user.html')
     if current_user.role == 'writer': return dict(layout='base_writer.html')
     elif current_user.role == 'admin': return dict(layout='base_admin.html')
@@ -279,6 +279,18 @@ def index():
     top_writers = User.query.filter_by(role='writer').limit(5).all()
     latest_reading_times = {post.id: estimate_reading_time(post.content) for post in latest}
     return render_template('index.html', trending=trending, latest=latest, category_data=category_data, top_writers=top_writers, latest_reading_times=latest_reading_times)
+
+@app.route('/writers')
+def writers():
+    writer_rows = (
+        db.session.query(User, func.count(BlogPost.id).label('post_count'))
+        .outerjoin(BlogPost, (BlogPost.author_id == User.id) & (BlogPost.status == 'active'))
+        .filter(User.role == 'writer')
+        .group_by(User.id)
+        .order_by(desc('post_count'), User.username.asc())
+        .all()
+    )
+    return render_template('writers.html', writer_rows=writer_rows, total_writers=len(writer_rows))
 
 @app.route('/all-posts')
 def all_posts():

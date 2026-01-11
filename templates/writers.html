@@ -1,0 +1,264 @@
+{% extends layout %}
+
+{% block content %}
+<style>
+  .writoPageWrap{
+    max-width:520px;
+    margin:0 auto;
+    padding:14px;
+  }
+
+  .writoHero{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:16px;
+    box-shadow:0 6px 18px rgba(16,24,40,.04);
+  }
+
+  .writoHeroTop{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+
+  .writoTitle{
+    font-size:18px;
+    font-weight:700;
+    letter-spacing:-0.2px;
+  }
+
+  .writoSub{
+    margin-top:8px;
+    font-size:12px;
+    font-weight:300;
+    color:var(--muted);
+    line-height:1.6;
+    max-width:38ch;
+  }
+
+  .writoHeroActions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  .writoPillBtn{
+    height:36px;
+    padding:0 12px;
+    border-radius:999px;
+    border:1px solid var(--softBorder);
+    background: rgba(255,255,255,0.35);
+    font-size:12px;
+    font-weight:700;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    color:var(--text);
+    text-decoration:none;
+  }
+  body[data-theme="dark"] .writoPillBtn{
+    background: rgba(255,255,255,0.06);
+  }
+  .writoPillBtn:active{transform:scale(.98)}
+
+  .writoSearchWrap{
+    margin-top:14px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  .writoToolInput{
+    flex:1;
+    min-width:200px;
+    height:40px;
+    border-radius:14px;
+    border:1px solid var(--softBorder);
+    background: rgba(255,255,255,0.55);
+    padding:0 12px;
+    font-size:12px;
+    outline:none;
+    font-family:inherit;
+    color:var(--text);
+  }
+  body[data-theme="dark"] .writoToolInput{
+    background: rgba(255,255,255,0.06);
+  }
+
+  .writoInfoRow{
+    margin-top:12px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  .writoInfoChip{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:10px;
+    border-radius:14px;
+    background:var(--soft);
+    border:1px solid var(--softBorder);
+    font-size:12px;
+    font-weight:300;
+    color:var(--muted);
+  }
+  .writoInfoChip svg{width:16px;height:16px}
+
+  .writoSectionTitle{
+    margin:16px 2px 10px;
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:.15px;
+  }
+
+  .writoGrid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+
+  .writerCard{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:14px 12px;
+    box-shadow:0 6px 18px rgba(16,24,40,.04);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    gap:10px;
+    text-decoration:none;
+    color:inherit;
+  }
+
+  .writerAvatar{
+    width:66px;
+    height:66px;
+    border-radius:999px;
+    overflow:hidden;
+    border:1px solid var(--softBorder);
+  }
+  .writerAvatar img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+
+  .writerName{
+    font-size:15px;
+    font-weight:700;
+    line-height:1.15;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+
+  .writerPostsRow{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    font-size:12px;
+    font-weight:300;
+    color:var(--muted);
+  }
+
+  .writerBio{
+    font-size:12px;
+    font-weight:300;
+    color:var(--muted);
+    line-height:1.5;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+
+  .emptyState{
+    padding:16px;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:18px;
+    text-align:center;
+    color:var(--muted);
+    font-size:12px;
+  }
+
+  @media(max-width:360px){
+    .writoGrid{grid-template-columns:1fr}
+  }
+</style>
+
+<main class="writoPageWrap">
+  <section class="writoHero">
+    <div class="writoHeroTop">
+      <div>
+        <div class="writoTitle">Writers</div>
+        <div class="writoSub">
+          Discover creators and explore their topics. Apply to become a writer.
+        </div>
+      </div>
+
+      <div class="writoHeroActions">
+        <a class="writoPillBtn" href="{{ url_for('apply_writer') }}">
+          <span data-lucide="pen-line"></span>
+          Become a Writer
+        </a>
+      </div>
+    </div>
+
+    <div class="writoSearchWrap">
+      <input class="writoToolInput" type="search" placeholder="Search writers (demo)" />
+      <button class="writoPillBtn" type="button">
+        <span data-lucide="search"></span>
+        Search
+      </button>
+    </div>
+
+    <div class="writoInfoRow">
+      <div class="writoInfoChip"><span data-lucide="users"></span> {{ total_writers }} writers</div>
+      <div class="writoInfoChip"><span data-lucide="file-text"></span> Topic based</div>
+      <div class="writoInfoChip"><span data-lucide="sparkles"></span> Curated</div>
+    </div>
+  </section>
+
+  <div class="writoSectionTitle">All Writers</div>
+
+  {% if writer_rows %}
+    <section class="writoGrid">
+      {% for writer, post_count in writer_rows %}
+      <a class="writerCard" href="{{ url_for('public_profile', username=writer.username) }}">
+        <div class="writerAvatar">
+          <img src="{{ url_for('static', filename='uploads/' + writer.profile_pic) }}" alt="{{ writer.username }}">
+        </div>
+        <div class="writerName">{{ writer.name or writer.username }}</div>
+        <div class="writerPostsRow">
+          <span data-lucide="file-text"></span>
+          {{ post_count }} posts
+        </div>
+        <div class="writerBio">
+          {% if writer.bio %}
+            {{ writer.bio }}
+          {% else %}
+            Sharing stories and ideas on Writo.
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </section>
+  {% else %}
+    <div class="emptyState">No writers available yet.</div>
+  {% endif %}
+</main>
+
+<script>
+  if (window.lucide && lucide.createIcons) lucide.createIcons();
+</script>
+{% endblock %}
