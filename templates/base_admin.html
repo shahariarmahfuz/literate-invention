@@ -1,54 +1,507 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Writo • Admin Panel</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        body { font-family: 'Outfit', sans-serif; background-color: #f8fafc; }
-        .sidebar { width: 260px; height: 100vh; position: fixed; top: 0; left: 0; background: #0f172a; color: #fff; padding: 20px; z-index: 1000; transition: 0.3s; }
-        .sidebar-header { font-size: 1.5rem; font-weight: 700; margin-bottom: 40px; display: flex; align-items: center; gap: 10px; color: #fff; text-decoration: none; }
-        .nav-link { color: #94a3b8; font-weight: 500; padding: 12px 15px; border-radius: 10px; margin-bottom: 5px; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
-        .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.1); color: #fff; }
-        .nav-link svg { width: 20px; height: 20px; }
-        .main-content { margin-left: 260px; padding: 30px; min-height: 100vh; }
-        .alert { border-radius: 12px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .section-header { font-size: 12px; text-transform: uppercase; color: #64748b; font-weight: 700; margin: 20px 0 10px 15px; letter-spacing: 0.5px; }
-        @media(max-width: 768px){ .sidebar { transform: translateX(-100%); } .sidebar.active { transform: translateX(0); } .main-content { margin-left: 0; } .mobile-toggle { display: block !important; } }
-        .mobile-toggle { display: none; position: fixed; top: 15px; right: 15px; z-index: 1100; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Writo • Admin Panel</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+
+    :root{
+      --bg:#f1f5f9;
+      --text:#0f172a;
+      --muted:#64748b;
+
+      --headerGlass: rgba(255,255,255,0.86);
+      --headerBlur: 6px;
+
+      --softHover: rgba(15,23,42,0.06);
+      --overlay: rgba(0,0,0,0.18);
+
+      --card:#ffffff;
+      --border:#eef0f6;
+      --soft:#f8fafc;
+      --softBorder:#e2e8f0;
+    }
+
+    body[data-theme="dark"]{
+      --bg:#0A0A0A;
+      --text:#e5e7eb;
+      --muted:#a1a1aa;
+
+      --headerGlass: rgba(10,10,10,0.78);
+      --headerBlur: 7px;
+
+      --softHover: rgba(255,255,255,0.08);
+      --overlay: rgba(0,0,0,0.35);
+
+      --card: rgba(255,255,255,0.06);
+      --border: rgba(255,255,255,0.10);
+      --soft: rgba(255,255,255,0.06);
+      --softBorder: rgba(255,255,255,0.12);
+    }
+
+    body{
+      font-family:'Outfit', system-ui, sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      overflow-x:hidden;
+    }
+
+    .pageBlur{transition:filter .18s ease;will-change:filter}
+    body.menuOpen .pageBlur{filter:blur(6px)}
+
+    .writoHeader{
+      position:sticky; top:0; z-index:1000;
+      background: var(--headerGlass);
+      backdrop-filter: blur(var(--headerBlur)) saturate(115%);
+      -webkit-backdrop-filter: blur(var(--headerBlur)) saturate(115%);
+      border-bottom:1px solid rgba(255,255,255,0.10);
+      box-shadow:0 2px 10px rgba(15,23,42,0.06);
+      height:56px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding-left:28px;
+      padding-right:20px;
+    }
+    body[data-theme="dark"] .writoHeader{
+      border-bottom:1px solid rgba(255,255,255,0.08);
+      box-shadow:0 6px 18px rgba(0,0,0,0.35);
+    }
+    .writoHeaderLeft{display:flex;align-items:center;gap:14px}
+    .writoBrand{font-size:18px;font-weight:700;letter-spacing:-0.5px}
+
+    .writoIconBtn{
+      width:34px;height:34px;
+      border:none;background:transparent;
+      display:inline-flex;align-items:center;justify-content:center;
+      cursor:pointer;padding:0;color:var(--text);
+      user-select:none;border-radius:12px;
+    }
+    .writoIconBtn:hover{background:var(--softHover)}
+    .writoIconBtn:active{transform:scale(.98)}
+    .writoHeaderRight{display:flex;align-items:center;gap:14px}
+    svg.lucide{width:20px;height:20px;stroke-width:1.5}
+
+    .writoOverlay{
+      position:fixed; inset:0;
+      background:var(--overlay);
+      opacity:0; pointer-events:none;
+      transition:.16s ease;
+      z-index:1200;
+    }
+    body.hasOverlay .writoOverlay{opacity:1;pointer-events:auto}
+
+    .writoMenu{
+      position:fixed; top:0; left:0;
+      width:230px; height:100vh;
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(14px) saturate(140%);
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
+      border-right:1px solid rgba(255,255,255,0.4);
+      transform:translateX(-100%);
+      transition:.20s ease;
+      z-index:1300;
+      padding:16px;
+      pointer-events:none;
+    }
+    body[data-theme="dark"] .writoMenu{
+      background: rgba(10,10,10,0.60);
+      border-right:1px solid rgba(255,255,255,0.14);
+    }
+    body.menuOpen .writoMenu{transform:translateX(0);pointer-events:auto}
+    .writoMenuHeader{display:flex;justify-content:flex-end;margin-bottom:16px}
+    .writoMenuHeader .writoIconBtn{background: rgba(255,255,255,0.20)}
+    body[data-theme="dark"] .writoMenuHeader .writoIconBtn{background: rgba(255,255,255,0.06)}
+    .writoMenuItem{
+      display:flex; align-items:center; gap:14px;
+      font-size:15px;
+      padding:12px 0;
+      cursor:pointer;
+      border-bottom:1px solid rgba(0,0,0,0.12);
+      color:var(--text);
+      font-weight:300;
+      text-decoration:none;
+    }
+    body[data-theme="dark"] .writoMenuItem{border-bottom:1px solid rgba(255,255,255,0.12)}
+    .writoMenuItem:last-child{border-bottom:none}
+    .writoMenuItem.active{font-weight:700}
+
+    .writoModal{
+      position:fixed;
+      left:50%;
+      top:86px;
+      transform: translateX(-50%) translateY(8px);
+      width: min(520px, calc(100vw - 28px));
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(14px) saturate(140%);
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
+      border:1px solid rgba(255,255,255,0.35);
+      border-radius:18px;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.15);
+      z-index:1400;
+      opacity:0;
+      pointer-events:none;
+      transition: .16s ease;
+      will-change: transform, opacity;
+      contain: paint;
+    }
+    body[data-theme="dark"] .writoModal{
+      background: rgba(10,10,10,0.64);
+      border:1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+    }
+    .writoModal.open{
+      opacity:1;
+      pointer-events:auto;
+      transform: translateX(-50%) translateY(0);
+    }
+    .writoModalInner{padding:14px}
+    .writoModalHead{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding-bottom:10px;
+      border-bottom:1px solid rgba(0,0,0,0.10);
+      margin-bottom:12px;
+    }
+    body[data-theme="dark"] .writoModalHead{border-bottom:1px solid rgba(255,255,255,0.12)}
+    .writoModalTitle{
+      display:flex; align-items:center; gap:10px;
+      font-size:14px; font-weight:700;
+    }
+    .writoModalClose{
+      width:34px;height:34px;border-radius:12px;
+      border:1px solid rgba(0,0,0,0.10);
+      background: rgba(255,255,255,0.30);
+      display:inline-flex;align-items:center;justify-content:center;
+      cursor:pointer;color:var(--text);
+    }
+    body[data-theme="dark"] .writoModalClose{
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+    }
+    .writoModalClose:active{transform:scale(.98)}
+    .writoPillGrid{display:flex;flex-wrap:wrap;gap:8px}
+    .writoLangPill{
+      padding:8px 10px;border-radius:999px;
+      border:1px solid rgba(0,0,0,0.10);
+      background: rgba(255,255,255,0.35);
+      font-size:12px;font-weight:400;color:var(--text);
+      cursor:not-allowed; user-select:none;
+    }
+    body[data-theme="dark"] .writoLangPill{
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+    }
+    .writoHint{
+      margin-top:10px;
+      font-size:12px;
+      font-weight:300;
+      color:var(--muted);
+      line-height:1.5;
+    }
+
+    .miniBtn{
+      height:34px;
+      padding:0 12px;
+      border-radius:999px;
+      border:1px solid var(--softBorder);
+      background: rgba(255,255,255,0.35);
+      color:var(--text);
+      font-size:12px;
+      font-weight:700;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+    }
+    body[data-theme="dark"] .miniBtn{background: rgba(255,255,255,0.06)}
+    .miniBtn:active{transform:scale(.98)}
+
+    .adminFooterWrap{
+      max-width:980px;
+      margin:0 auto;
+      padding:10px 14px 18px;
+    }
+    @media(max-width:1020px){ .adminFooterWrap{max-width:520px} }
+    .adminFooter{
+      background: rgba(255,255,255,0.20);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:10px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      color:var(--muted);
+      font-size:11px;
+      font-weight:300;
+    }
+    body[data-theme="dark"] .adminFooter{background: rgba(255,255,255,0.04)}
+    .adminFooter a{color:var(--muted);text-decoration:none;font-weight:400}
+    .adminFooter a:hover{color:var(--text)}
+    .adminLinks{display:flex;gap:12px;flex-wrap:wrap}
+
+    @media(max-width:520px){
+      .writoHeader{padding-left:26px;padding-right:18px}
+      .writoHeaderRight{gap:12px}
+      .writoIconBtn{width:33px;height:33px}
+      .writoModal{top:74px}
+    }
+  </style>
 </head>
-<body>
-    <button class="btn btn-dark mobile-toggle shadow" onclick="document.querySelector('.sidebar').classList.toggle('active')"><i data-lucide="menu"></i></button>
-    <nav class="sidebar">
-        <a href="/" class="sidebar-header"><i data-lucide="shield-check"></i> Admin Panel</a>
-        <ul class="nav flex-column">
-            <li class="nav-item"><a href="{{ url_for('dashboard_admin') }}" class="nav-link {{ 'active' if request.endpoint == 'dashboard_admin' else '' }}"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
-            <li class="nav-item"><a href="{{ url_for('admin_users') }}" class="nav-link {{ 'active' if request.endpoint == 'admin_users' else '' }}"><i data-lucide="users"></i> User Management</a></li>
 
-            <div class="section-header">Moderation</div>
-            <li class="nav-item"><a href="{{ url_for('admin_post_reports') }}" class="nav-link {{ 'active' if request.endpoint == 'admin_post_reports' else '' }}"><i data-lucide="flag"></i> Post Reports</a></li>
-            <li class="nav-item"><a href="{{ url_for('admin_comment_reports') }}" class="nav-link {{ 'active' if request.endpoint == 'admin_comment_reports' else '' }}"><i data-lucide="message-square-warning"></i> Comment Reports</a></li>
+<body data-theme="light">
+  <div class="pageBlur">
+    <header class="writoHeader">
+      <div class="writoHeaderLeft">
+        <button class="writoIconBtn" id="writoOpenMenu" type="button" aria-label="Open menu">
+          <span data-lucide="menu"></span>
+        </button>
+        <div class="writoBrand">Writo</div>
+      </div>
 
-            <div class="section-header">System</div>
-            <li class="nav-item"><a href="/" class="nav-link"><i data-lucide="home"></i> View Website</a></li>
-            <li class="nav-item"><a href="{{ url_for('logout') }}" class="nav-link text-danger"><i data-lucide="log-out"></i> Logout</a></li>
-        </ul>
-    </nav>
-    <main class="main-content">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">{{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        {% block content %}{% endblock %}
-    </main>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>lucide.createIcons();</script>
+      <div class="writoHeaderRight">
+        <button class="writoIconBtn" id="writoBtnMore" type="button" aria-label="More">
+          <span data-lucide="more-vertical"></span>
+        </button>
+
+        <button class="writoIconBtn" id="writoBtnTranslate" type="button" aria-label="Translate">
+          <span data-lucide="languages"></span>
+        </button>
+
+        <button class="writoIconBtn" id="writoBtnTheme" type="button" aria-label="Toggle theme">
+          <span id="writoIconMoon" data-lucide="moon"></span>
+          <span id="writoIconSun" data-lucide="sun" style="display:none"></span>
+        </button>
+      </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div style="max-width:980px; margin: 14px auto 0; padding: 0 14px;">
+          {% for category, message in messages %}
+            <div style="margin-bottom:10px; padding:10px 12px; border-radius:12px; border:1px solid var(--border); background:var(--card);">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+
+    <div class="adminFooterWrap">
+      <footer class="adminFooter">
+        <div>© 2026 Writo • Admin Panel</div>
+        <div class="adminLinks">
+          <a href="#">Support</a>
+          <a href="{{ url_for('privacy') }}">Privacy</a>
+          <a href="{{ url_for('terms') }}">Terms</a>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <div class="writoOverlay" id="writoOverlay"></div>
+
+  <aside class="writoMenu" id="writoMenu">
+    <div class="writoMenuHeader">
+      <button class="writoIconBtn" id="writoCloseMenu" type="button" aria-label="Close menu">
+        <span data-lucide="x"></span>
+      </button>
+    </div>
+
+    <a class="writoMenuItem {{ 'active' if request.endpoint == 'dashboard_admin' else '' }}" href="{{ url_for('dashboard_admin') }}">
+      <span data-lucide="layout-dashboard"></span><span>Dashboard</span>
+    </a>
+    <a class="writoMenuItem {{ 'active' if request.endpoint == 'admin_users' else '' }}" href="{{ url_for('admin_users') }}">
+      <span data-lucide="users"></span><span>Manage Writers</span>
+    </a>
+    <a class="writoMenuItem {{ 'active' if request.endpoint == 'admin_post_review' else '' }}" href="{{ url_for('admin_post_review') }}">
+      <span data-lucide="scan"></span><span>Post Review</span>
+    </a>
+    <a class="writoMenuItem {{ 'active' if request.endpoint == 'admin_comment_reports' else '' }}" href="{{ url_for('admin_comment_reports') }}">
+      <span data-lucide="shield-alert"></span><span>Comment Reports</span>
+    </a>
+    <a class="writoMenuItem {{ 'active' if request.endpoint == 'admin_site_status' else '' }}" href="{{ url_for('admin_site_status') }}">
+      <span data-lucide="activity"></span><span>Status of Web</span>
+    </a>
+    <a class="writoMenuItem {{ 'active' if request.endpoint == 'admin_audit_log' else '' }}" href="{{ url_for('admin_audit_log') }}">
+      <span data-lucide="history"></span><span>Audit Log</span>
+    </a>
+    <a class="writoMenuItem {{ 'active' if request.endpoint == 'admin_settings' else '' }}" href="{{ url_for('admin_settings') }}">
+      <span data-lucide="settings"></span><span>Admin Settings</span>
+    </a>
+    <a class="writoMenuItem" href="{{ url_for('logout') }}">
+      <span data-lucide="log-out"></span><span>Logout</span>
+    </a>
+  </aside>
+
+  <section class="writoModal" id="writoModalTranslate" aria-hidden="true">
+    <div class="writoModalInner">
+      <div class="writoModalHead">
+        <div class="writoModalTitle"><span data-lucide="languages"></span> Translate</div>
+        <button class="writoModalClose" type="button" data-writo-close aria-label="Close">
+          <span data-lucide="x"></span>
+        </button>
+      </div>
+
+      <div class="writoPillGrid">
+        <div class="writoLangPill">বাংলা</div>
+        <div class="writoLangPill">English</div>
+        <div class="writoLangPill">हिन्दी</div>
+        <div class="writoLangPill">اردو</div>
+        <div class="writoLangPill">العربية</div>
+      </div>
+      <div class="writoHint">ভাষা সিলেক্ট UI থাকবে, কিন্তু এখন কাজ করবে না।</div>
+    </div>
+  </section>
+
+  <script>
+    lucide.createIcons();
+
+    const W = {
+      body: document.body,
+      overlay: document.getElementById("writoOverlay"),
+      menu: document.getElementById("writoMenu"),
+      openMenu: document.getElementById("writoOpenMenu"),
+      closeMenu: document.getElementById("writoCloseMenu"),
+      modalTranslate: document.getElementById("writoModalTranslate"),
+      btnTranslate: document.getElementById("writoBtnTranslate"),
+      btnTheme: document.getElementById("writoBtnTheme"),
+      iconMoon: document.getElementById("writoIconMoon"),
+      iconSun: document.getElementById("writoIconSun"),
+      btnMore: document.getElementById("writoBtnMore"),
+    };
+
+    const headerMenu = document.createElement("div");
+    headerMenu.style.position = "fixed";
+    headerMenu.style.top = "64px";
+    headerMenu.style.right = "14px";
+    headerMenu.style.width = "220px";
+    headerMenu.style.zIndex = "1600";
+    headerMenu.style.display = "none";
+    headerMenu.style.backdropFilter = "blur(14px) saturate(140%)";
+    headerMenu.style.webkitBackdropFilter = "blur(14px) saturate(140%)";
+    headerMenu.style.borderRadius = "16px";
+    headerMenu.style.padding = "8px";
+
+    headerMenu.innerHTML = `
+      <button class="miniBtn" style="width:100%;justify-content:flex-start;margin-bottom:8px" type="button" id="goCommentReports">
+        <span data-lucide="message-square-warning"></span> Comment Reports
+      </button>
+      <button class="miniBtn" style="width:100%;justify-content:flex-start;margin-bottom:8px" type="button" id="goAudit">
+        <span data-lucide="history"></span> Audit Log
+      </button>
+      <button class="miniBtn" style="width:100%;justify-content:flex-start" type="button" id="goSettings">
+        <span data-lucide="settings"></span> Admin Settings
+      </button>
+    `;
+    document.body.appendChild(headerMenu);
+    lucide.createIcons();
+
+    function headerMenuOpen(){ return headerMenu.style.display === "block"; }
+    function toggleHeaderMenu(){ headerMenu.style.display = headerMenuOpen() ? "none" : "block"; }
+    function closeHeaderMenu(){ headerMenu.style.display = "none"; }
+
+    function setHeaderMenuTheme(){
+      const isDark = document.body.getAttribute("data-theme")==="dark";
+      if(isDark){
+        headerMenu.style.background = "rgba(10,10,10,0.66)";
+        headerMenu.style.border = "1px solid rgba(255,255,255,0.14)";
+        headerMenu.style.boxShadow = "0 20px 60px rgba(0,0,0,0.55)";
+      }else{
+        headerMenu.style.background = "rgba(255,255,255,0.78)";
+        headerMenu.style.border = "1px solid rgba(255,255,255,0.40)";
+        headerMenu.style.boxShadow = "0 18px 50px rgba(0,0,0,0.15)";
+      }
+    }
+
+    function applyTheme(theme){
+      W.body.setAttribute("data-theme", theme);
+      const isDark = theme === "dark";
+      W.iconMoon.style.display = isDark ? "none" : "inline-block";
+      W.iconSun.style.display  = isDark ? "inline-block" : "none";
+      localStorage.setItem("writoTheme", theme);
+      setHeaderMenuTheme();
+    }
+    applyTheme(localStorage.getItem("writoTheme")==="dark" ? "dark" : "light");
+
+    W.btnTheme.addEventListener("click", () => {
+      const next = W.body.getAttribute("data-theme")==="dark" ? "light" : "dark";
+      applyTheme(next);
+    });
+
+    function anyOpen(){
+      return W.body.classList.contains("menuOpen")
+        || W.modalTranslate.classList.contains("open")
+        || headerMenuOpen();
+    }
+    function syncOverlay(){
+      if (anyOpen()) W.body.classList.add("hasOverlay");
+      else W.body.classList.remove("hasOverlay");
+    }
+
+    function closeAll(){
+      const ae = document.activeElement;
+      if (ae && ae.blur) ae.blur();
+
+      requestAnimationFrame(() => {
+        W.body.classList.remove("menuOpen");
+        W.modalTranslate.classList.remove("open");
+        closeHeaderMenu();
+        syncOverlay();
+      });
+    }
+
+    W.openMenu.addEventListener("click", () => {
+      W.modalTranslate.classList.remove("open");
+      closeHeaderMenu();
+      W.body.classList.add("menuOpen");
+      syncOverlay();
+    });
+    W.closeMenu.addEventListener("click", () => {
+      W.body.classList.remove("menuOpen");
+      syncOverlay();
+    });
+
+    W.btnTranslate.addEventListener("click", () => {
+      W.body.classList.remove("menuOpen");
+      closeHeaderMenu();
+      W.modalTranslate.classList.toggle("open");
+      syncOverlay();
+    });
+
+    document.querySelectorAll("[data-writo-close]").forEach(btn => btn.addEventListener("click", closeAll));
+    W.overlay.addEventListener("click", closeAll);
+    window.addEventListener("keydown", (e) => { if(e.key==="Escape") closeAll(); });
+
+    W.btnMore.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      W.body.classList.remove("menuOpen");
+      W.modalTranslate.classList.remove("open");
+      toggleHeaderMenu();
+      syncOverlay();
+    });
+    headerMenu.addEventListener("click", (e)=> e.stopPropagation());
+    document.addEventListener("click", ()=> { closeHeaderMenu(); syncOverlay(); });
+
+    document.getElementById("goCommentReports").addEventListener("click", ()=>{
+      window.location.href = "{{ url_for('admin_comment_reports') }}";
+    });
+    document.getElementById("goAudit").addEventListener("click", ()=>{
+      window.location.href = "{{ url_for('admin_audit_log') }}";
+    });
+    document.getElementById("goSettings").addEventListener("click", ()=>{
+      window.location.href = "{{ url_for('admin_settings') }}";
+    });
+  </script>
 </body>
 </html>

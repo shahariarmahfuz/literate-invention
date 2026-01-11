@@ -1,167 +1,1562 @@
-{% extends layout %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Writo • {{ post.title }}</title>
 
-{% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <h1 class="mb-3 fw-bold">{{ post.title }}</h1>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
 
-            <div class="d-flex align-items-center justify-content-between mb-4 text-muted">
-                <div class="d-flex align-items-center gap-2">
-                    <img src="{{ url_for('static', filename='uploads/' + post.author.profile_pic) }}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
-                    <small>
-                        By <a href="{{ url_for('public_profile', username=post.author.username) }}" class="text-dark fw-bold">{{ post.author.username }}</a> 
-                        • {{ post.date_posted.strftime('%d %B, %Y') }}
-                    </small>
-                </div>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
 
-                <div class="d-flex gap-2">
-                    {% if current_user.is_authenticated %}
-                    <button class="btn btn-sm btn-outline-warning" onclick="openReportModal('post', {{ post.id }})" title="Report Post">
-                        <i data-lucide="flag" style="width: 16px;"></i>
-                    </button>
-                    {% endif %}
+    :root{
+      --bg:#f1f5f9;
+      --text:#0f172a;
+      --muted:#64748b;
 
-                    {% if current_user.is_authenticated %}
-                    <button class="btn btn-sm btn-outline-danger d-flex align-items-center gap-2" onclick="toggleLikePost({{ post.id }})">
-                        <i data-lucide="heart" style="width: 16px;" class="{{ 'fill-danger text-danger' if current_user in post.liked_by else '' }}" id="postLikeIcon"></i>
-                        <span id="postLikeCount">{{ post.liked_by|length }}</span>
-                    </button>
-                    <button class="btn btn-sm btn-outline-primary" onclick="toggleBookmark({{ post.id }})">
-                        <i data-lucide="bookmark" style="width: 16px;" class="{{ 'fill-primary text-primary' if current_user in post.bookmarked_by else '' }}"></i>
-                    </button>
-                    {% endif %}
-                </div>
-            </div>
+      --headerGlass: rgba(255,255,255,0.86);
+      --headerBlur: 6px;
 
-            <hr class="mb-4">
+      --softHover: rgba(15,23,42,0.06);
+      --overlay: rgba(0,0,0,0.18);
 
-            {% if post.thumbnail %}
-                <img src="{{ url_for('static', filename='uploads/' + post.thumbnail) }}" class="img-fluid rounded mb-4 w-100 shadow-sm">
-            {% endif %}
+      --card:#ffffff;
+      --border:#eef0f6;
+      --soft:#f8fafc;
+      --softBorder:#e2e8f0;
 
-            <div class="article-content" style="font-size: 1.15rem; line-height: 1.8; color: #2d3748;">
-                {{ post.content }}
-            </div>
+      --ringSize:16px;
+      --ringStroke:3px;
 
-            <hr class="mt-5 mb-5">
+      --wrap: 520px;
+      --mainH: 46px;
 
-            <div class="comments-section">
-                <h4 class="fw-bold mb-4">Comments ({{ post.comments|length }})</h4>
+      --vvh: 100vh;
+      --modalEase: 160ms;
 
-                {% if current_user.is_authenticated %}
-                <form action="/post/{{ post.id }}/comment" method="POST" class="mb-5">
-                    <div class="d-flex gap-3">
-                        <img src="{{ url_for('static', filename='uploads/' + current_user.profile_pic) }}" style="width: 40px; height: 40px; border-radius: 50%;">
-                        <div class="flex-grow-1">
-                            <textarea name="content" class="form-control mb-2" rows="2" placeholder="Write a comment..." required></textarea>
-                            <button class="btn btn-primary rounded-pill px-4" type="submit">Post Comment</button>
-                        </div>
-                    </div>
-                </form>
-                {% else %}
-                    <div class="alert alert-light border text-center py-4">
-                        <a href="{{ url_for('login') }}" class="btn btn-sm btn-primary">Login to Comment</a>
-                    </div>
-                {% endif %}
+      --stackH: 92px;
+    }
 
-                <div class="d-flex flex-column gap-3">
-                    {% for comment in post.comments %}
-                    <div class="d-flex gap-3 p-3 rounded bg-light position-relative group-hover">
-                        <a href="{{ url_for('public_profile', username=comment.author.username) }}">
-                            <img src="{{ url_for('static', filename='uploads/' + comment.author.profile_pic) }}" style="width: 40px; height: 40px; border-radius: 50%;">
-                        </a>
+    body[data-theme="dark"]{
+      --bg:#0A0A0A;
+      --text:#e5e7eb;
+      --muted:#a1a1aa;
 
-                        <div class="flex-grow-1">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <div>
-                                    <span class="fw-bold">{{ comment.author.username }}</span>
-                                    <span class="text-muted small ms-2">{{ comment.date_posted.strftime('%b %d') }}</span>
-                                </div>
-                                {% if current_user.is_authenticated %}
-                                <button class="btn btn-link text-muted p-0" onclick="openReportModal('comment', {{ comment.id }})" title="Report Comment">
-                                    <i data-lucide="flag" style="width: 14px;"></i>
-                                </button>
-                                {% endif %}
-                            </div>
-                            <p class="mb-2 text-secondary">{{ comment.content }}</p>
+      --headerGlass: rgba(10,10,10,0.78);
+      --headerBlur: 7px;
 
-                            <span class="d-flex align-items-center gap-1 text-muted" style="cursor: pointer; font-size: 0.85rem;" onclick="toggleCommentLike({{ comment.id }}, this)">
-                                <i data-lucide="heart" style="width: 14px;" class="{{ 'fill-danger text-danger' if current_user in comment.liked_by else '' }}"></i>
-                                <span class="like-count fw-bold">{{ comment.liked_by|length }}</span>
-                            </span>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
+      --softHover: rgba(255,255,255,0.08);
+      --overlay: rgba(0,0,0,0.35);
 
-            <div class="text-center mt-5 mb-5">
-                <a href="/" class="btn btn-outline-secondary rounded-pill px-4">← Back to Home</a>
-            </div>
+      --card: rgba(255,255,255,0.06);
+      --border: rgba(255,255,255,0.10);
+      --soft: rgba(255,255,255,0.06);
+      --softBorder: rgba(255,255,255,0.12);
+    }
+
+    html, body{height:100%}
+    body{
+      font-family:'Outfit', system-ui, sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: none;
+    }
+
+    .pageBlur{transition:filter .18s ease;will-change:filter}
+    body.menuOpen .pageBlur{filter:blur(6px)}
+
+    .writoHeaderStack{
+      position:sticky;
+      top:0;
+      z-index:1000;
+
+      background: var(--headerGlass);
+      backdrop-filter: blur(var(--headerBlur)) saturate(115%);
+      -webkit-backdrop-filter: blur(var(--headerBlur)) saturate(115%);
+
+      border-bottom:1px solid rgba(255,255,255,0.10);
+      box-shadow:0 2px 10px rgba(15,23,42,0.06);
+      overflow:hidden;
+      will-change: transform;
+      transform: translateZ(0);
+    }
+    body[data-theme="dark"] .writoHeaderStack{
+      border-bottom:1px solid rgba(255,255,255,0.08);
+      box-shadow:0 6px 18px rgba(0,0,0,0.35);
+    }
+
+    .writoHeader{
+      position:absolute;
+      top:0; left:0; right:0;
+      height:var(--mainH);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding-left:26px;
+      padding-right:18px;
+      background:transparent;
+
+      transition: transform .18s ease, opacity .18s ease;
+      will-change: transform, opacity;
+    }
+
+    .writoHeaderLeft{display:flex;align-items:center;gap:12px}
+    .writoBrand{font-size:17px;font-weight:700;letter-spacing:-0.4px}
+
+    .writoIconBtn{
+      width:30px;height:30px;
+      border:none;background:transparent;
+      display:inline-flex;align-items:center;justify-content:center;
+      cursor:pointer;padding:0;color:var(--text);
+      user-select:none;border-radius:10px;
+    }
+    .writoIconBtn:hover{background:var(--softHover)}
+    .writoIconBtn:active{transform:scale(.98)}
+    .writoHeaderRight{display:flex;align-items:center;gap:12px}
+    svg.lucide{width:19px;height:19px;stroke-width:1.5}
+
+    .trackerBar{
+      border-top:1px solid rgba(255,255,255,0.10);
+      padding:4px 0 5px;
+      padding-top: calc(var(--mainH) + 4px);
+      transition: padding-top .18s ease;
+      will-change: padding-top;
+    }
+
+    body.compactHeader .writoHeader{
+      transform: translateY(-100%);
+      opacity:0;
+      pointer-events:none;
+    }
+    body.compactHeader .trackerBar{
+      padding-top: 6px;
+      border-top:none;
+    }
+
+    .trackerInner{
+      width:min(var(--wrap), calc(100vw - 28px));
+      margin:0 auto;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:0 2px;
+    }
+
+    .progressWrap{
+      width:var(--ringSize);
+      height:var(--ringSize);
+      display:grid;
+      place-items:center;
+      flex:0 0 auto;
+    }
+    .progressSvg{
+      width:var(--ringSize);
+      height:var(--ringSize);
+      transform:rotate(-90deg);
+    }
+    .ringTrack{
+      fill:none;
+      stroke:rgba(255,255,255,0.18);
+      stroke-width:var(--ringStroke);
+    }
+    body:not([data-theme="dark"]) .ringTrack{stroke:rgba(15,23,42,0.18)}
+
+    .ringFill{
+      fill:none;
+      stroke:rgba(255,255,255,0.92);
+      stroke-width:var(--ringStroke);
+      stroke-linecap:round;
+      stroke-dasharray:100;
+      stroke-dashoffset:100;
+      transition:stroke-dashoffset 110ms linear;
+      will-change: stroke-dashoffset;
+    }
+    body:not([data-theme="dark"]) .ringFill{stroke:rgba(15,23,42,0.92)}
+
+    .trkTitle{
+      flex:1;
+      min-width:0;
+      font-size:12px;
+      color:var(--muted);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      font-weight:300;
+    }
+    .trkTitle span{color:var(--text);font-weight:300}
+
+    .tocBtn{
+      border:none;background:transparent;
+      cursor:pointer;
+      display:grid;place-items:center;
+      width:30px;height:30px;
+      border-radius:10px;color:var(--text);
+    }
+    .tocBtn:hover{background: var(--softHover)}
+    .tocBtn:active{transform:scale(.98)}
+    .chev{width:18px;height:18px;transition:transform .18s ease}
+    .tocBtn[data-open="true"] .chev{transform:rotate(180deg)}
+
+    .toc{display:none;padding:6px 0 10px;border-top:1px solid rgba(255,255,255,0.10)}
+    .toc.open{display:block}
+    .tocListWrap{
+      width:min(var(--wrap), calc(100vw - 28px));
+      margin:0 auto;
+      padding:0 2px;
+    }
+    .tocItem{
+      padding:8px 6px;
+      font-size:13px;
+      color:var(--muted);
+      cursor:pointer;
+      border-radius:12px;
+      font-weight:300;
+      user-select:none;
+    }
+    .tocItem:hover{background: var(--softHover); color:var(--text)}
+    .tocItem.active{color:var(--text); font-weight:500}
+
+    .writoOverlay{
+      position:fixed; inset:0;
+      background:var(--overlay);
+      opacity:0; pointer-events:none;
+      transition:opacity .16s ease;
+      z-index:1200;
+    }
+    body.hasOverlay .writoOverlay{opacity:1;pointer-events:auto}
+
+    .writoMenu{
+      position:fixed; top:0; left:0;
+      width:230px; height:100vh;
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(14px) saturate(140%);
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
+      border-right:1px solid rgba(255,255,255,0.4);
+      transform:translateX(-100%);
+      transition:.20s ease;
+      z-index:1300;
+      padding:16px;
+      pointer-events:none;
+    }
+    body[data-theme="dark"] .writoMenu{
+      background: rgba(10,10,10,0.60);
+      border-right:1px solid rgba(255,255,255,0.14);
+    }
+    body.menuOpen .writoMenu{transform:translateX(0);pointer-events:auto}
+
+    .writoMenuHeader{display:flex;justify-content:flex-end;margin-bottom:16px}
+    .writoMenuHeader .writoIconBtn{background: rgba(255,255,255,0.20)}
+    body[data-theme="dark"] .writoMenuHeader .writoIconBtn{background: rgba(255,255,255,0.06)}
+
+    .writoMenuItem{
+      display:flex; align-items:center; gap:14px;
+      font-size:15px;
+      padding:12px 0;
+      cursor:pointer;
+      border-bottom:1px solid rgba(0,0,0,0.12);
+      color:var(--text);
+      font-weight:300;
+      text-decoration:none;
+    }
+    body[data-theme="dark"] .writoMenuItem{border-bottom:1px solid rgba(255,255,255,0.12)}
+    .writoMenuItem:last-child{border-bottom:none}
+
+    .writoModal{
+      position:fixed;
+      left:50%;
+      top:72px;
+      transform: translateX(-50%) translateY(10px);
+      width: min(var(--wrap), calc(100vw - 28px));
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(14px) saturate(140%);
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
+      border:1px solid rgba(255,255,255,0.35);
+      border-radius:18px;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.15);
+      z-index:1400;
+
+      opacity:0;
+      pointer-events:none;
+      transition: opacity var(--modalEase) ease, transform var(--modalEase) ease;
+      will-change: transform, opacity;
+      contain: paint;
+      max-height: calc(var(--vvh) - 90px);
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    body.compactHeader .writoModal{ top:54px; }
+    body[data-theme="dark"] .writoModal{
+      background: rgba(10,10,10,0.64);
+      border:1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+    }
+    .writoModal.open{
+      opacity:1;
+      pointer-events:auto;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .writoModalInner{padding:14px}
+    .writoModalHead{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding-bottom:10px;
+      border-bottom:1px solid rgba(0,0,0,0.10);
+      margin-bottom:12px;
+    }
+    body[data-theme="dark"] .writoModalHead{border-bottom:1px solid rgba(255,255,255,0.12)}
+    .writoModalTitle{display:flex; align-items:center; gap:10px;font-size:14px; font-weight:700}
+
+    .writoModalClose{
+      width:34px;height:34px;border-radius:12px;
+      border:1px solid rgba(0,0,0,0.10);
+      background: rgba(255,255,255,0.30);
+      display:inline-flex;align-items:center;justify-content:center;
+      cursor:pointer;color:var(--text);
+    }
+    body[data-theme="dark"] .writoModalClose{
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+    }
+    .writoModalClose:active{transform:scale(.98)}
+
+    .writoSearchInput{
+      width:100%;
+      height:40px;
+      border-radius:14px;
+      border:1px solid rgba(0,0,0,0.10);
+      background: rgba(255,255,255,0.55);
+      padding:0 12px;
+      font-family:inherit;
+      font-size:13px;
+      color:var(--text);
+      outline:none;
+    }
+    body[data-theme="dark"] .writoSearchInput{
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+    }
+
+    .writoHint{margin-top:10px;font-size:12px;font-weight:300;color:var(--muted);line-height:1.5}
+
+    body.kbd .writoModal,
+    body.kbd .writoOverlay{
+      transition:none !important;
+    }
+
+    @media (max-width: 600px){
+      .writoModal{
+        left: 50%;
+        top: auto;
+        bottom: 12px;
+        transform: translateX(-50%) translateY(10px);
+        width: calc(100vw - 24px);
+        max-height: calc(var(--vvh) - 24px);
+        border-radius:18px;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+      }
+      .writoModal.open{transform: translateX(-50%) translateY(0)}
+      body[data-theme="dark"] .writoModal{
+        background: rgba(10,10,10,0.92) !important;
+        box-shadow: 0 18px 55px rgba(0,0,0,0.60);
+      }
+    }
+
+    .pageSection{
+      width:min(var(--wrap), calc(100vw - 28px));
+      margin:0 auto;
+      padding-top:12px;
+      padding-bottom:24px;
+    }
+
+    .breadcrumbRow{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+    .bLine{display:flex;align-items:center;gap:6px;padding-left:10px;white-space:nowrap;overflow:hidden}
+    .bLine.topLine{
+      font-size:16px;
+      color:rgba(255,255,255,0.70);
+      font-weight:500;
+    }
+    body:not([data-theme="dark"]) .bLine.topLine{color:rgba(15,23,42,0.62)}
+    .crumb{display:inline-flex;align-items:center;gap:8px;min-width:0}
+    .crumb .label{overflow:hidden;text-overflow:ellipsis}
+    .sep{opacity:.45;font-size:12px}
+    .bIcon{font-size:14px;opacity:.9;width:18px;display:inline-flex;align-items:center;justify-content:center}
+    .bookLine{font-size:13px;color:rgba(255,255,255,0.58)}
+    body:not([data-theme="dark"]) .bookLine{color:rgba(15,23,42,0.52)}
+    .bookLine strong{color:var(--text);font-weight:500}
+
+    .hero{margin-top:12px}
+    .thumb{
+      width:100%;
+      height:210px;
+      border-radius:0;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+    }
+    body:not([data-theme="dark"]) .thumb{border:1px solid rgba(15,23,42,0.10)}
+    .thumb img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+      filter: saturate(1.05) contrast(1.05);
+    }
+
+    .metaRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:12px;
+      margin-bottom:10px;
+      padding-left:10px;
+    }
+
+    .author{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+    }
+
+    .avatarImg{
+      width:34px;height:34px;
+      border-radius:999px;
+      object-fit:cover;
+      border:1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.06);
+      flex:0 0 auto;
+      display:block;
+    }
+    body:not([data-theme="dark"]) .avatarImg{
+      border:1px solid rgba(15,23,42,0.12);
+      background: rgba(15,23,42,0.04);
+    }
+
+    .authorText{min-width:0}
+    .aName{
+      font-size:13px;
+      font-weight:500;
+      color:var(--text);
+      line-height:1.1;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:260px;
+    }
+    .aRole{
+      margin-top:3px;
+      font-size:12px;
+      color:rgba(255,255,255,0.55);
+      font-weight:300;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:320px;
+    }
+    body:not([data-theme="dark"]) .aRole{color:rgba(15,23,42,0.55)}
+
+    .metaRight{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      color:rgba(255,255,255,0.60);
+      font-weight:300;
+      font-size:12px;
+      padding-left:14px;
+      flex-wrap:wrap;
+    }
+    body:not([data-theme="dark"]) .metaRight{color:rgba(15,23,42,0.58)}
+    .metaDot{opacity:.6}
+
+    .iconAction{
+      border:none;
+      background:transparent;
+      width:32px;height:32px;
+      border-radius:12px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      color:var(--text);
+      user-select:none;
+    }
+    .iconAction:hover{background: var(--softHover)}
+    .iconAction:active{transform:scale(.98)}
+    .iconAction i{font-size:14px}
+
+    .savePill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      margin-left:2px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      cursor:pointer;
+      user-select:none;
+      color:var(--text);
+      text-decoration:none;
+    }
+    body:not([data-theme="dark"]) .savePill{
+      border:1px solid rgba(15,23,42,0.12);
+      background: rgba(15,23,42,0.04);
+    }
+    .savePill:active{transform:scale(.98)}
+    .savePill i{font-size:14px}
+    .saveLabel{font-size:12px;font-weight:500}
+    .savePill[data-on="true"]{
+      background: rgba(255,255,255,0.10);
+      border-color: rgba(255,255,255,0.18);
+    }
+
+    .content{
+      margin-top:14px;
+      line-height:1.95;
+      padding-left:10px;
+      padding-right:10px;
+      font-size:15px;
+    }
+
+    .content h2{
+      margin:46px 0 12px;
+      font-size:20px;
+      letter-spacing:-0.2px;
+      color:var(--text);
+      font-weight:700;
+    }
+    .content p{
+      margin:0 0 16px;
+      color:rgba(255,255,255,0.72);
+      font-weight:300;
+      font-size:15px;
+    }
+    body:not([data-theme="dark"]) .content p{color:rgba(15,23,42,0.70)}
+    .content ul{margin:0 0 16px 18px}
+    .content li{
+      margin:8px 0;
+      color:rgba(255,255,255,0.72);
+      font-weight:300;
+      font-size:15px;
+    }
+    body:not([data-theme="dark"]) .content li{color:rgba(15,23,42,0.70)}
+
+    [data-track="true"]{
+      scroll-margin-top: calc(var(--stackH) + 14px);
+    }
+
+    .divider{
+      height:1px;
+      background: rgba(255,255,255,0.10);
+      margin:34px 0;
+    }
+    body:not([data-theme="dark"]) .divider{background: rgba(15,23,42,0.10)}
+
+    .note{
+      padding:12px 12px;
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+      margin:18px 0 10px;
+      border-radius:16px;
+      color:rgba(255,255,255,0.68);
+      font-weight:300;
+      font-size:13px;
+      line-height:1.7;
+    }
+    body:not([data-theme="dark"]) .note{
+      border:1px solid rgba(15,23,42,0.10);
+      background: rgba(15,23,42,0.03);
+      color:rgba(15,23,42,0.70);
+    }
+
+    .blockTitle{
+      margin:44px 0 14px;
+      font-size:18px;
+      font-weight:700;
+      color:var(--text);
+      letter-spacing:-0.2px;
+    }
+
+    .commentComposer{
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+      border-radius:18px;
+      padding:12px;
+    }
+    body:not([data-theme="dark"]) .commentComposer{
+      border:1px solid rgba(15,23,42,0.10);
+      background: rgba(15,23,42,0.03);
+    }
+
+    .composerRow{display:flex;gap:10px;align-items:flex-start}
+    .meAvatar{
+      width:34px;height:34px;
+      border-radius:999px;
+      object-fit:cover;
+      border:1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.06);
+      flex:0 0 auto;
+    }
+    body:not([data-theme="dark"]) .meAvatar{
+      border:1px solid rgba(15,23,42,0.12);
+      background: rgba(15,23,42,0.04);
+    }
+
+    .composerMain{flex:1;min-width:0}
+    .composerTop{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      margin-bottom:8px;
+    }
+    .composerName{
+      font-size:13px;
+      font-weight:500;
+      color:var(--text);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .commentCount{
+      font-size:12px;
+      font-weight:300;
+      color:rgba(255,255,255,0.55);
+    }
+    body:not([data-theme="dark"]) .commentCount{color:rgba(15,23,42,0.55)}
+
+    .commentInput{
+      width:100%;
+      min-height:92px;
+      resize:vertical;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      padding:10px 12px;
+      font-family:inherit;
+      color:var(--text);
+      outline:none;
+      line-height:1.6;
+      font-size:13px;
+      font-weight:300;
+    }
+    body:not([data-theme="dark"]) .commentInput{
+      border:1px solid rgba(15,23,42,0.12);
+      background: rgba(15,23,42,0.04);
+      color:var(--text);
+    }
+
+    .composerBottom{
+      margin-top:10px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .hintSmall{
+      font-size:12px;
+      color:rgba(255,255,255,0.55);
+      font-weight:300;
+    }
+    body:not([data-theme="dark"]) .hintSmall{color:rgba(15,23,42,0.55)}
+
+    .btnRow{display:flex;gap:10px;align-items:center}
+    .ghostBtn{
+      border:none;background:transparent;
+      color:rgba(255,255,255,0.78);
+      cursor:pointer;
+      padding:8px 10px;border-radius:12px;
+      font-family:inherit;
+      font-size:12px;
+      font-weight:500;
+    }
+    body:not([data-theme="dark"]) .ghostBtn{color:rgba(15,23,42,0.70)}
+    .ghostBtn:hover{background:var(--softHover)}
+    .ghostBtn:active{transform:scale(.98)}
+
+    .primaryBtn{
+      border:none;
+      cursor:pointer;
+      padding:10px 12px;
+      border-radius:12px;
+      background: rgba(255,255,255,0.14);
+      color:var(--text);
+      font-family:inherit;
+      font-size:12px;
+      font-weight:700;
+    }
+    body:not([data-theme="dark"]) .primaryBtn{
+      background: rgba(15,23,42,0.08);
+      color:var(--text);
+    }
+    .primaryBtn:active{transform:scale(.98)}
+
+    .commentList{margin-top:14px;display:flex;flex-direction:column;gap:12px}
+    .commentItem{
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+      border-radius:18px;
+      padding:12px;
+    }
+    body:not([data-theme="dark"]) .commentItem{
+      border:1px solid rgba(15,23,42,0.10);
+      background: rgba(15,23,42,0.03);
+    }
+
+    .commentHead{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      margin-bottom:8px;
+    }
+    .cLeft{display:flex;align-items:center;gap:10px;min-width:0}
+    .cAvatar{
+      width:30px;height:30px;border-radius:999px;object-fit:cover;
+      border:1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.06);
+      flex:0 0 auto;
+    }
+    body:not([data-theme="dark"]) .cAvatar{
+      border:1px solid rgba(15,23,42,0.12);
+      background: rgba(15,23,42,0.04);
+    }
+    .cName{
+      font-size:13px;font-weight:500;color:var(--text);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      max-width:220px;
+    }
+    .cTime{font-size:12px;font-weight:300;color:rgba(255,255,255,0.55)}
+    body:not([data-theme="dark"]) .cTime{color:rgba(15,23,42,0.55)}
+
+    .cBody{
+      font-size:13px;
+      font-weight:300;
+      line-height:1.7;
+      color:rgba(255,255,255,0.72);
+      word-break:break-word;
+    }
+    body:not([data-theme="dark"]) .cBody{color:rgba(15,23,42,0.70)}
+
+    .cActions{
+      margin-top:10px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .miniIconBtn{
+      border:none;
+      background:transparent;
+      height:34px;
+      border-radius:12px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      color:var(--text);
+      user-select:none;
+      padding:0 10px;
+      gap:8px;
+    }
+    .miniIconBtn:hover{background: var(--softHover)}
+    .miniIconBtn:active{transform:scale(.98)}
+    .miniIconBtn i{font-size:15px}
+
+    .loveCount{
+      font-size:12px;
+      font-weight:500;
+      color:rgba(255,255,255,0.62);
+      min-width:10px;
+      text-align:left;
+    }
+    body:not([data-theme="dark"]) .loveCount{color:rgba(15,23,42,0.56)}
+
+    .miniIconBtn[data-on="true"] i{color:#ff4d6d;}
+    body:not([data-theme="dark"]) .miniIconBtn[data-on="true"] i{color:#ff3b66;}
+
+    .emptyNote{
+      padding:12px 14px;
+      border-radius:14px;
+      background:var(--soft);
+      border:1px solid var(--softBorder);
+      font-size:12px;
+      font-weight:300;
+      color:var(--muted);
+    }
+
+    .writoFooterWrap{max-width:520px;margin:0 auto;padding:0 14px 18px}
+    .writoFooter{
+      margin-top:28px;
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:18px;
+      overflow:hidden;
+      box-shadow:0 6px 18px rgba(16,24,40,.04);
+    }
+    .writoFooterInner{
+      padding:18px;
+      display:grid;
+      grid-template-columns: 1.2fr 1fr 1fr 1.3fr;
+      gap:16px;
+    }
+    .writoBrandCol{display:flex;flex-direction:column;gap:10px}
+    .writoLogo{font-size:16px;font-weight:700;letter-spacing:.2px;color:var(--text)}
+    .writoTagline{font-size:12px;font-weight:300;line-height:1.55;color:var(--muted);max-width:280px}
+    .writoSocial{display:flex;gap:10px;margin-top:2px}
+    .writoSocial a{
+      width:36px;height:36px;border-radius:12px;
+      border:1px solid var(--softBorder);
+      background: rgba(255,255,255,0.40);
+      display:flex;align-items:center;justify-content:center;
+      color:var(--text);text-decoration:none;transition:.15s ease;
+    }
+    body[data-theme="dark"] .writoSocial a{background: rgba(255,255,255,0.06)}
+    .writoSocial a:active{transform:scale(.98)}
+    .writoSocial i{font-size:15px}
+    .writoColTitle{font-size:12px;font-weight:700;margin-bottom:10px;color:var(--text);letter-spacing:.15px}
+    .writoLinks{list-style:none;display:flex;flex-direction:column;gap:8px}
+    .writoLinks a{font-size:12px;font-weight:400;color:var(--muted);text-decoration:none;width:max-content}
+    .writoLinks a:hover{color:var(--text)}
+    .writoNewsBox{
+      background:var(--soft);
+      border:1px solid var(--softBorder);
+      border-radius:16px;
+      padding:12px;
+    }
+    .writoNewsText{font-size:12px;font-weight:300;color:var(--muted);line-height:1.5;margin-bottom:10px}
+    .writoNewsForm{display:flex;gap:10px}
+    .writoInput{
+      flex:1;height:38px;border-radius:12px;
+      border:1px solid var(--softBorder);
+      padding:0 12px;font-size:12px;outline:none;
+      background: rgba(255,255,255,0.55);
+      color:var(--text);
+      font-family:inherit;
+    }
+    body[data-theme="dark"] .writoInput{background: rgba(255,255,255,0.06)}
+    .writoBtn{
+      height:38px;padding:0 12px;border-radius:12px;
+      border:1px solid var(--softBorder);
+      background:#0f172a;color:#fff;
+      font-size:12px;font-weight:700;cursor:pointer;
+      transition:.15s ease;
+    }
+    body[data-theme="dark"] .writoBtn{
+      background: rgba(255,255,255,0.14);
+      border:1px solid rgba(255,255,255,0.16);
+      color: var(--text);
+    }
+    .writoBtn:active{transform:scale(.98)}
+    .writoFooterBottom{
+      border-top:1px solid var(--border);
+      padding:12px 18px;
+      display:flex;align-items:center;justify-content:space-between;
+      gap:12px;flex-wrap:wrap;
+      background: rgba(255,255,255,0.20);
+    }
+    .writoCopy{font-size:11px;font-weight:300;color:var(--muted)}
+    .writoBottomLinks{display:flex;gap:12px;flex-wrap:wrap}
+    .writoBottomLinks a{font-size:11px;font-weight:400;color:var(--muted);text-decoration:none}
+    .writoBottomLinks a:hover{color:var(--text)}
+
+    @media(max-width:900px){
+      .writoFooterInner{grid-template-columns:1fr 1fr}
+    }
+    @media(max-width:520px){
+      .thumb{height:190px}
+      .writoFooterInner{grid-template-columns:1fr;padding:16px}
+      .writoFooterBottom{padding:12px 16px}
+    }
+  </style>
+</head>
+
+<body data-theme="dark">
+  <div class="pageBlur">
+    <div class="writoHeaderStack" id="headerStack">
+      <header class="writoHeader" id="mainHeader">
+        <div class="writoHeaderLeft">
+          <button class="writoIconBtn" id="writoOpenMenu" type="button" aria-label="Open menu">
+            <span data-lucide="menu"></span>
+          </button>
+          <div class="writoBrand">Writo</div>
         </div>
-    </div>
-</div>
 
-<div class="modal fade" id="reportModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content rounded-4 border-0 shadow">
-      <div class="modal-header border-0">
-        <h5 class="modal-title fw-bold text-danger"><i data-lucide="alert-triangle"></i> Report Content</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="writoHeaderRight">
+          <button class="writoIconBtn" id="writoBtnSearch" type="button" aria-label="Search">
+            <span data-lucide="search"></span>
+          </button>
+          <button class="writoIconBtn" id="writoBtnBookmark" type="button" aria-label="Bookmarks">
+            <span data-lucide="bookmark"></span>
+          </button>
+          <button class="writoIconBtn" id="writoBtnTranslate" type="button" aria-label="Translate">
+            <span data-lucide="languages"></span>
+          </button>
+
+          <button class="writoIconBtn" id="writoBtnTheme" type="button" aria-label="Toggle theme">
+            <span id="writoIconMoon" data-lucide="moon"></span>
+            <span id="writoIconSun" data-lucide="sun" style="display:none"></span>
+          </button>
+        </div>
+      </header>
+
+      <div class="trackerBar" id="articleTracker">
+        <div class="trackerInner">
+          <div class="progressWrap" aria-label="Reading progress">
+            <svg class="progressSvg" viewBox="0 0 36 36" aria-hidden="true">
+              <path class="ringTrack" d="M18 2 a 16 16 0 0 1 0 32 a 16 16 0 0 1 0 -32"/>
+              <path class="ringFill" id="ringFill" d="M18 2 a 16 16 0 0 1 0 32 a 16 16 0 0 1 0 -32"/>
+            </svg>
+          </div>
+
+          <div class="trkTitle">
+            <span id="currentSection">{{ post.title }}</span>
+          </div>
+
+          <button class="tocBtn" id="tocBtn" data-open="false" aria-label="Open sections">
+            <svg class="chev" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="toc" id="toc">
+          <div class="tocListWrap" id="tocList"></div>
+        </div>
       </div>
-      <form id="reportForm" method="POST">
-          <div class="modal-body">
-            <p class="text-muted mb-3">Why are you reporting this?</p>
-            <div class="d-flex flex-column gap-2">
-                <label class="btn btn-light text-start border"><input type="radio" name="reason" value="Spam" required> Spam</label>
-                <label class="btn btn-light text-start border"><input type="radio" name="reason" value="Harassment or Hate Speech"> Harassment or Hate Speech</label>
-                <label class="btn btn-light text-start border"><input type="radio" name="reason" value="Misinformation"> Misinformation</label>
-                <label class="btn btn-light text-start border"><input type="radio" name="reason" value="Inappropriate Content"> Inappropriate Content</label>
-                <label class="btn btn-light text-start border"><input type="radio" name="reason" value="Other"> Other</label>
+    </div>
+
+    <div class="pageSection" id="pageRoot">
+      <div class="breadcrumbRow" aria-label="Page location">
+        <div class="bLine topLine">
+          <span class="crumb" aria-label="Home">
+            <i class="fa-solid fa-house bIcon"></i>
+          </span>
+          <i class="fa-solid fa-chevron-right sep" aria-hidden="true"></i>
+          <span class="crumb">
+            <i class="fa-regular fa-newspaper bIcon"></i>
+            <span class="label">Blog</span>
+          </span>
+        </div>
+
+        <div class="bLine bookLine">
+          <span class="crumb">
+            <i class="fa-solid fa-book-open bIcon"></i>
+            <strong class="label">{{ post.title }}</strong>
+          </span>
+        </div>
+      </div>
+
+      <div class="hero">
+        <div class="thumb" aria-label="Thumbnail">
+          {% if post.thumbnail %}
+            <img src="{{ url_for('static', filename='uploads/' + post.thumbnail) }}" alt="{{ post.title }}" loading="lazy" />
+          {% else %}
+            <img src="https://images.unsplash.com/photo-1526378722484-bd91ca387e72?auto=format&fit=crop&w=1200&q=80" alt="{{ post.title }}" loading="lazy" />
+          {% endif %}
+        </div>
+
+        <div class="metaRow">
+          <div class="author">
+            <img class="avatarImg" src="{{ url_for('static', filename='uploads/' + post.author.profile_pic) }}" alt="{{ post.author.username }}" loading="lazy" />
+            <div class="authorText">
+              <div class="aName">{{ post.author.name or post.author.username }}</div>
+              <div class="aRole">{{ post.author.username }}</div>
             </div>
           </div>
-          <div class="modal-footer border-0">
-            <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-danger rounded-pill px-4">Submit Report</button>
+
+          <div class="metaRight" aria-label="Post details">
+            <span><i class="fa-regular fa-calendar"></i> {{ post.date_posted.strftime('%b %d, %Y') }}</span>
+            <span class="metaDot">•</span>
+            <span><i class="fa-regular fa-clock"></i> {{ reading_time_minutes }} min</span>
+
+            {% if current_user.is_authenticated %}
+              <button class="iconAction" id="postReportBtn" type="button" aria-label="Report this post" title="Report">
+                <i class="fa-regular fa-flag"></i>
+              </button>
+
+              <button class="savePill" id="savePill" type="button" aria-label="Save post" data-on="{{ 'true' if current_user in post.bookmarked_by else 'false' }}">
+                <i class="{{ 'fa-solid fa-bookmark' if current_user in post.bookmarked_by else 'fa-regular fa-bookmark' }}" id="saveIcon"></i>
+                <span class="saveLabel" id="saveLabel">{{ 'Saved' if current_user in post.bookmarked_by else 'Save' }}</span>
+              </button>
+            {% else %}
+              <a class="savePill" href="{{ url_for('login') }}" aria-label="Login to save">
+                <i class="fa-regular fa-bookmark"></i>
+                <span class="saveLabel">Save</span>
+              </a>
+            {% endif %}
           </div>
-      </form>
+        </div>
+      </div>
+
+      <main class="content" id="trackRoot" data-default-title="{{ post.title }}">
+        {{ post.content|safe }}
+      </main>
+
+      <div class="divider"></div>
+
+      <section data-track="true" data-title="Comments" id="comments">
+        <h2 class="blockTitle">Comments</h2>
+
+        {% if current_user.is_authenticated %}
+          <form class="commentComposer" action="{{ url_for('add_comment', post_id=post.id) }}" method="POST">
+            <div class="composerRow">
+              <img class="meAvatar" src="{{ url_for('static', filename='uploads/' + current_user.profile_pic) }}" alt="{{ current_user.username }}" loading="lazy" />
+              <div class="composerMain">
+                <div class="composerTop">
+                  <div class="composerName">{{ current_user.username }}</div>
+                  <div class="commentCount">{{ post.comments|length }} comments</div>
+                </div>
+
+                <textarea class="commentInput" name="content" placeholder="Write a comment…" required></textarea>
+
+                <div class="composerBottom">
+                  <div class="hintSmall">Be respectful. Comments are public.</div>
+                  <div class="btnRow">
+                    <button class="ghostBtn" type="reset">Clear</button>
+                    <button class="primaryBtn" type="submit">Post Comment</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        {% else %}
+          <div class="note">Please <a href="{{ url_for('login') }}">log in</a> to comment.</div>
+        {% endif %}
+
+        <div class="commentList" id="commentList">
+          {% for comment in post.comments %}
+          <div class="commentItem">
+            <div class="commentHead">
+              <div class="cLeft">
+                <img class="cAvatar" src="{{ url_for('static', filename='uploads/' + comment.author.profile_pic) }}" alt="{{ comment.author.username }}" loading="lazy">
+                <div class="cName">{{ comment.author.username }}</div>
+              </div>
+              <div class="cTime">{{ comment.date_posted.strftime('%b %d') }}</div>
+            </div>
+            <div class="cBody">{{ comment.content }}</div>
+            <div class="cActions">
+              {% if current_user.is_authenticated %}
+                <button class="miniIconBtn loveBtn" type="button" aria-label="Love this comment" data-on="{{ 'true' if current_user in comment.liked_by else 'false' }}" data-comment-id="{{ comment.id }}" data-count="{{ comment.liked_by|length }}" title="Love">
+                  <i class="{{ 'fa-solid fa-heart' if current_user in comment.liked_by else 'fa-regular fa-heart' }}"></i>
+                  <span class="loveCount">{{ comment.liked_by|length }}</span>
+                </button>
+                <button class="miniIconBtn reportCommentBtn" type="button" aria-label="Report this comment" data-comment-id="{{ comment.id }}" title="Report">
+                  <i class="fa-regular fa-flag"></i>
+                </button>
+              {% else %}
+                <span class="loveCount">{{ comment.liked_by|length }} loves</span>
+              {% endif %}
+            </div>
+          </div>
+          {% else %}
+            <div class="emptyNote">No comments yet.</div>
+          {% endfor %}
+        </div>
+      </section>
     </div>
+
+    <section data-track="true" data-title="Footer" id="footerTrack" style="width:100%">
+      <div class="writoFooterWrap">
+        <footer class="writoFooter">
+          <div class="writoFooterInner">
+            <div class="writoBrandCol">
+              <div class="writoLogo">Writo</div>
+              <p class="writoTagline">Minimal, mobile-first stories. Discover trending posts, curated categories, and creators you’ll love.</p>
+              <div class="writoSocial">
+                <a href="#"><i class="fa-brands fa-facebook-f"></i></a>
+                <a href="#"><i class="fa-brands fa-x-twitter"></i></a>
+                <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                <a href="#"><i class="fa-brands fa-youtube"></i></a>
+              </div>
+            </div>
+
+            <div>
+              <div class="writoColTitle">Quick Links</div>
+              <ul class="writoLinks">
+                <li><a href="{{ url_for('index') }}">Home</a></li>
+                <li><a href="{{ url_for('all_posts') }}">Trending</a></li>
+                <li><a href="{{ url_for('writers') }}">Top Writers</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <div class="writoColTitle">Top Categories</div>
+              <ul class="writoLinks">
+                <li><a href="#">Technology</a></li>
+                <li><a href="#">Design</a></li>
+                <li><a href="#">AI</a></li>
+                <li><a href="#">Business</a></li>
+                <li><a href="#">Lifestyle</a></li>
+              </ul>
+            </div>
+
+            <div class="writoNewsBox">
+              <div class="writoColTitle">Newsletter</div>
+              <p class="writoNewsText">Get weekly highlights—no spam, just the best posts.</p>
+              <form class="writoNewsForm" onsubmit="event.preventDefault();">
+                <input class="writoInput" type="email" placeholder="Email address" required>
+                <button class="writoBtn" type="submit">Join</button>
+              </form>
+            </div>
+          </div>
+
+          <div class="writoFooterBottom">
+            <div class="writoCopy">© 2026 Writo. All rights reserved.</div>
+            <div class="writoBottomLinks">
+              <a href="{{ url_for('privacy') }}">Privacy</a>
+              <a href="{{ url_for('terms') }}">Terms</a>
+              <a href="#">Cookies</a>
+              <a href="#">Contact</a>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </section>
   </div>
-</div>
 
-<style>
-    .fill-danger { fill: #dc3545; }
-    .fill-primary { fill: #0d6efd; }
-</style>
+  <div class="writoOverlay" id="writoOverlay"></div>
 
-<script>
+  <aside class="writoMenu" id="writoMenu">
+    <div class="writoMenuHeader">
+      <button class="writoIconBtn" id="writoCloseMenu" type="button" aria-label="Close menu">
+        <span data-lucide="x"></span>
+      </button>
+    </div>
+
+    <a class="writoMenuItem" href="{{ url_for('index') }}"><span data-lucide="home"></span><span>Home</span></a>
+    <a class="writoMenuItem" href="{{ url_for('all_posts') }}"><span data-lucide="layout-grid"></span><span>Categories</span></a>
+    <a class="writoMenuItem" href="{{ url_for('all_posts') }}"><span data-lucide="clock"></span><span>Latest</span></a>
+    <a class="writoMenuItem" href="{{ url_for('index') }}"><span data-lucide="flame"></span><span>Trending</span></a>
+    <a class="writoMenuItem" href="{{ url_for('writers') }}"><span data-lucide="star"></span><span>Featured</span></a>
+  </aside>
+
+  <section class="writoModal" id="writoModalSearch" aria-hidden="true">
+    <div class="writoModalInner">
+      <div class="writoModalHead">
+        <div class="writoModalTitle"><span data-lucide="search"></span> Search</div>
+        <button class="writoModalClose" type="button" data-writo-close aria-label="Close">
+          <span data-lucide="x"></span>
+        </button>
+      </div>
+      <input class="writoSearchInput" id="writoSearchInput" type="search" placeholder="Type to search…" />
+      <div class="writoHint">User can type here (demo). Search doesn’t work yet.</div>
+    </div>
+  </section>
+
+  <section class="writoModal" id="writoModalTranslate" aria-hidden="true">
+    <div class="writoModalInner">
+      <div class="writoModalHead">
+        <div class="writoModalTitle"><span data-lucide="languages"></span> Translate</div>
+        <button class="writoModalClose" type="button" data-writo-close aria-label="Close">
+          <span data-lucide="x"></span>
+        </button>
+      </div>
+      <div class="writoPillGrid">
+        <div class="writoLangPill">বাংলা</div>
+        <div class="writoLangPill">English</div>
+        <div class="writoLangPill">हिन्दी</div>
+        <div class="writoLangPill">اردو</div>
+        <div class="writoLangPill">العربية</div>
+      </div>
+      <div class="writoHint">Language UI is here, but it won’t translate yet.</div>
+    </div>
+  </section>
+
+  <section class="writoModal" id="writoModalSaved" aria-hidden="true">
+    <div class="writoModalInner">
+      <div class="writoModalHead">
+        <div class="writoModalTitle"><span data-lucide="bookmark"></span> Saved</div>
+        <button class="writoModalClose" type="button" data-writo-close aria-label="Close">
+          <span data-lucide="x"></span>
+        </button>
+      </div>
+      {% if current_user.is_authenticated and current_user.bookmarked_posts.count() > 0 %}
+        {% for saved in current_user.bookmarked_posts %}
+          <div class="note" style="margin:0 0 10px">
+            <a href="{{ url_for('post_detail', post_id=saved.id) }}">{{ saved.title }}</a>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="note" style="margin:0">
+          No saved posts yet.
+        </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <script>
     lucide.createIcons();
 
-    // Open Report Modal Logic
-    function openReportModal(type, id) {
-        const form = document.getElementById('reportForm');
-        // Set action URL dynamically based on type (post or comment)
-        form.action = `/report/${type}/${id}`;
-
-        const modal = new bootstrap.Modal(document.getElementById('reportModal'));
-        modal.show();
+    function updateVVH(){
+      const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      document.documentElement.style.setProperty("--vvh", h + "px");
+    }
+    updateVVH();
+    if (window.visualViewport){
+      window.visualViewport.addEventListener("resize", updateVVH, { passive:true });
+      window.visualViewport.addEventListener("scroll", updateVVH, { passive:true });
+    } else {
+      window.addEventListener("resize", updateVVH, { passive:true });
     }
 
-    function toggleBookmark(postId) {
-        fetch(`/api/bookmark/${postId}`, { method: 'POST' }).then(() => location.reload());
+    const W = {
+      body: document.body,
+      overlay: document.getElementById("writoOverlay"),
+      menu: document.getElementById("writoMenu"),
+      openMenu: document.getElementById("writoOpenMenu"),
+      closeMenu: document.getElementById("writoCloseMenu"),
+
+      modalSearch: document.getElementById("writoModalSearch"),
+      modalTranslate: document.getElementById("writoModalTranslate"),
+      modalSaved: document.getElementById("writoModalSaved"),
+
+      btnSearch: document.getElementById("writoBtnSearch"),
+      btnTranslate: document.getElementById("writoBtnTranslate"),
+      btnBookmark: document.getElementById("writoBtnBookmark"),
+
+      searchInput: document.getElementById("writoSearchInput"),
+
+      btnTheme: document.getElementById("writoBtnTheme"),
+      iconMoon: document.getElementById("writoIconMoon"),
+      iconSun: document.getElementById("writoIconSun"),
+
+      savePill: document.getElementById("savePill"),
+      saveIcon: document.getElementById("saveIcon"),
+      saveLabel: document.getElementById("saveLabel"),
+
+      postReportBtn: document.getElementById("postReportBtn"),
+
+      headerStack: document.getElementById("headerStack"),
+    };
+
+    function updateStackH(){
+      const h = W.headerStack.getBoundingClientRect().height;
+      document.documentElement.style.setProperty("--stackH", Math.max(44, Math.round(h)) + "px");
     }
-    function toggleLikePost(postId) {
-        fetch(`/api/like-post/${postId}`, { method: 'POST' }).then(res => res.json()).then(data => {
-            document.getElementById('postLikeCount').innerText = data.count;
-            location.reload(); 
+
+    function applyTheme(theme){
+      W.body.setAttribute("data-theme", theme);
+      const isDark = theme === "dark";
+      W.iconMoon.style.display = isDark ? "none" : "inline-block";
+      W.iconSun.style.display  = isDark ? "inline-block" : "none";
+      localStorage.setItem("writoTheme", theme);
+    }
+    applyTheme(localStorage.getItem("writoTheme")==="light" ? "light" : "dark");
+
+    W.btnTheme.addEventListener("click", () => {
+      const next = W.body.getAttribute("data-theme")==="dark" ? "light" : "dark";
+      applyTheme(next);
+    });
+
+    if (W.savePill){
+      W.savePill.addEventListener("click", () => {
+        const on = W.savePill.dataset.on === "true";
+        const postId = "{{ post.id }}";
+        fetch(`/api/bookmark/${postId}`, { method: "POST" }).then(() => {
+          W.savePill.dataset.on = String(!on);
+          if(!on){
+            W.saveIcon.className = "fa-solid fa-bookmark";
+            W.saveLabel.textContent = "Saved";
+          } else {
+            W.saveIcon.className = "fa-regular fa-bookmark";
+            W.saveLabel.textContent = "Save";
+          }
         });
+      });
     }
-    function toggleCommentLike(commentId, btn) {
-        fetch(`/api/like-comment/${commentId}`, { method: 'POST' }).then(res => res.json()).then(data => {
-            btn.querySelector('.like-count').innerText = data.count;
-            location.reload();
-        });
+
+    if (W.postReportBtn){
+      W.postReportBtn.addEventListener("click", () => {
+        const reason = prompt("Why are you reporting this post?");
+        if (!reason) return;
+        const formData = new FormData();
+        formData.append("reason", reason);
+        fetch(`/report/post/{{ post.id }}`, { method: "POST", body: formData })
+          .then(() => alert("Reported."));
+      });
     }
-</script>
-{% endblock %}
+
+    function anyOpen(){
+      return W.body.classList.contains("menuOpen")
+        || W.modalSearch.classList.contains("open")
+        || W.modalTranslate.classList.contains("open")
+        || W.modalSaved.classList.contains("open");
+    }
+
+    function syncOverlay(){
+      if (anyOpen()) W.body.classList.add("hasOverlay");
+      else W.body.classList.remove("hasOverlay");
+    }
+
+    function closeAll(){
+      const ae = document.activeElement;
+      if (ae && ae.blur) ae.blur();
+
+      requestAnimationFrame(() => {
+        W.body.classList.remove("menuOpen");
+        W.modalSearch.classList.remove("open");
+        W.modalTranslate.classList.remove("open");
+        W.modalSaved.classList.remove("open");
+        syncOverlay();
+      });
+    }
+
+    W.openMenu.addEventListener("click", () => {
+      W.modalSearch.classList.remove("open");
+      W.modalTranslate.classList.remove("open");
+      W.modalSaved.classList.remove("open");
+      W.body.classList.add("menuOpen");
+      syncOverlay();
+    });
+
+    W.closeMenu.addEventListener("click", () => {
+      W.body.classList.remove("menuOpen");
+      syncOverlay();
+    });
+
+    function openModal(modal){
+      W.body.classList.remove("menuOpen");
+      W.modalSearch.classList.remove("open");
+      W.modalTranslate.classList.remove("open");
+      W.modalSaved.classList.remove("open");
+
+      modal.classList.add("open");
+      syncOverlay();
+
+      const CAN_AUTOFOCUS = window.matchMedia("(hover:hover) and (pointer:fine)").matches;
+      if(modal === W.modalSearch && CAN_AUTOFOCUS){
+        modal.addEventListener("transitionend", () => {
+          try{ W.searchInput.focus({preventScroll:true}); }
+          catch{ W.searchInput.focus(); }
+        }, { once:true });
+      }
+    }
+
+    W.btnSearch.addEventListener("click", () => openModal(W.modalSearch));
+    W.btnTranslate.addEventListener("click", () => openModal(W.modalTranslate));
+    W.btnBookmark.addEventListener("click", () => openModal(W.modalSaved));
+
+    document.querySelectorAll("[data-writo-close]").forEach(btn => btn.addEventListener("click", closeAll));
+    W.overlay.addEventListener("click", closeAll);
+    window.addEventListener("keydown", (e) => { if(e.key==="Escape") closeAll(); });
+
+    let kbdTimer = null;
+    function setKbd(on){
+      clearTimeout(kbdTimer);
+      if(on){
+        W.body.classList.add("kbd");
+      } else {
+        kbdTimer = setTimeout(() => W.body.classList.remove("kbd"), 180);
+      }
+    }
+    W.searchInput.addEventListener("focus", () => setKbd(true));
+    W.searchInput.addEventListener("blur",  () => setKbd(false));
+
+    let lastY = Math.max(0, window.scrollY || 0);
+    let ticking = false;
+    let compact = false;
+    let lastToggle = 0;
+
+    const COMPACT_ON = 90;
+    const EXPAND_AT  = 35;
+    const DELTA      = 2;
+    const COOLDOWN   = 180;
+
+    function setCompact(next){
+      const now = performance.now();
+      if (next === compact) return;
+      if (now - lastToggle < COOLDOWN) return;
+
+      compact = next;
+      document.body.classList.toggle("compactHeader", compact);
+      lastToggle = now;
+
+      requestAnimationFrame(updateStackH);
+    }
+
+    function onScrollSmart(){
+      const y = Math.max(0, window.scrollY || 0);
+      const d = y - lastY;
+
+      if (y <= EXPAND_AT) {
+        setCompact(false);
+      } else {
+        if (d > DELTA && y >= COMPACT_ON) setCompact(true);
+        if (d < -DELTA) setCompact(false);
+      }
+
+      lastY = y;
+      ticking = false;
+    }
+
+    function tick(){
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(onScrollSmart);
+    }
+
+    updateStackH();
+    window.addEventListener("scroll", tick, { passive:true });
+    window.addEventListener("resize", () => requestAnimationFrame(updateStackH), { passive:true });
+
+    document.querySelectorAll(".loveBtn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const commentId = btn.dataset.commentId;
+        fetch(`/api/like-comment/${commentId}`, { method: "POST" })
+          .then(res => res.json())
+          .then(data => {
+            const icon = btn.querySelector("i");
+            const next = btn.dataset.on !== "true";
+            btn.dataset.on = String(next);
+            if (data.count != null) {
+              btn.querySelector(".loveCount").textContent = data.count;
+              btn.dataset.count = data.count;
+            }
+            icon.className = next ? "fa-solid fa-heart" : "fa-regular fa-heart";
+          });
+      });
+    });
+
+    document.querySelectorAll(".reportCommentBtn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const reason = prompt("Why are you reporting this comment?");
+        if (!reason) return;
+        const formData = new FormData();
+        formData.append("reason", reason);
+        fetch(`/report/comment/${btn.dataset.commentId}`, { method: "POST", body: formData })
+          .then(() => alert("Comment reported."));
+      });
+    });
+  </script>
+
+  <script>
+    const T = {
+      current: document.getElementById("currentSection"),
+      ring: document.getElementById("ringFill"),
+      toc: document.getElementById("toc"),
+      tocBtn: document.getElementById("tocBtn"),
+      tocList: document.getElementById("tocList"),
+      headerStack: document.getElementById("headerStack"),
+      trackRoot: document.getElementById("trackRoot"),
+    };
+
+    function getStackH(){
+      return Math.round(T.headerStack.getBoundingClientRect().height || 0);
+    }
+
+    function gatherSections(){
+      let sections = [...T.trackRoot.querySelectorAll('[data-track="true"]')];
+      if (!sections.length) {
+        T.trackRoot.setAttribute("data-track", "true");
+        T.trackRoot.setAttribute("data-title", T.trackRoot.dataset.defaultTitle || "Article");
+        sections = [T.trackRoot];
+      }
+      return sections;
+    }
+
+    let sections = gatherSections();
+
+    T.tocList.innerHTML = "";
+    sections.forEach((sec, idx) => {
+      const item = document.createElement("div");
+      item.className = "tocItem";
+      item.textContent = sec.dataset.title || "Section";
+
+      item.addEventListener("click", () => {
+        const stackH = getStackH();
+        const top = window.scrollY + sec.getBoundingClientRect().top - stackH - 12;
+        window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+
+        T.toc.classList.remove("open");
+        T.tocBtn.dataset.open = "false";
+      });
+
+      if(idx === 0) item.classList.add("active");
+      T.tocList.appendChild(item);
+    });
+
+    T.tocBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const open = T.toc.classList.toggle("open");
+      T.tocBtn.dataset.open = String(open);
+    });
+
+    document.addEventListener("click", (e) => {
+      if(!T.toc.classList.contains("open")) return;
+      if(T.toc.contains(e.target) || T.tocBtn.contains(e.target)) return;
+      T.toc.classList.remove("open");
+      T.tocBtn.dataset.open = "false";
+    });
+
+    let activeIndex = 0;
+    function setActive(i){
+      if (i === activeIndex) return;
+      activeIndex = i;
+
+      const title = sections[i]?.dataset.title || "{{ post.title }}";
+      T.current.textContent = title;
+
+      [...T.tocList.children].forEach(n => n.classList.remove("active"));
+      T.tocList.children[i]?.classList.add("active");
+    }
+
+    let io = null;
+    function mountObserver(){
+      if (io) io.disconnect();
+      sections = gatherSections();
+
+      const stackH = getStackH();
+      const rootMargin = `-${stackH + 18}px 0px -70% 0px`;
+
+      io = new IntersectionObserver((entries) => {
+        const visible = entries
+          .filter(e => e.isIntersecting)
+          .sort((a,b) => a.boundingClientRect.top - b.boundingClientRect.top);
+
+        if (visible.length){
+          const idx = sections.indexOf(visible[0].target);
+          if (idx >= 0) setActive(idx);
+        } else {
+          if (window.scrollY <= 4) setActive(0);
+        }
+      }, { root: null, threshold: [0, 0.01, 0.1], rootMargin });
+
+      sections.forEach(sec => io.observe(sec));
+    }
+
+    let raf = 0;
+    function updateProgress(){
+      const doc = document.documentElement;
+      const total = (doc.scrollHeight - window.innerHeight);
+      const p = total <= 0 ? 1 : Math.min(1, Math.max(0, window.scrollY / total));
+      T.ring.style.strokeDashoffset = String(100 - (p * 100));
+    }
+    function onScroll(){
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        updateProgress();
+        raf = 0;
+      });
+    }
+
+    mountObserver();
+    updateProgress();
+
+    addEventListener("scroll", onScroll, { passive:true });
+    addEventListener("resize", () => {
+      mountObserver();
+      updateProgress();
+    });
+
+    const mo = new MutationObserver(() => {
+      requestAnimationFrame(() => {
+        mountObserver();
+        updateProgress();
+      });
+    });
+    mo.observe(document.body, { attributes:true, attributeFilter:["class"] });
+  </script>
+</body>
+</html>

@@ -576,12 +576,15 @@
 
       {% if current_user.is_authenticated and current_user.bookmarked_posts.count() > 0 %}
           {% for post in current_user.bookmarked_posts %}
-          <div style="display:flex; gap:10px; margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+          <div class="bookmarkItem" style="display:flex; gap:10px; margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:10px; align-items:center;">
               <img src="{{ url_for('static', filename='uploads/' + (post.thumbnail or 'default.jpg')) }}" style="width:50px; height:50px; border-radius:8px; object-fit:cover;">
-              <div>
+              <div style="flex:1;">
                   <a href="{{ url_for('post_detail', post_id=post.id) }}" style="font-size:13px; font-weight:700; color:var(--text); text-decoration:none; display:block;">{{ post.title }}</a>
                   <span style="font-size:11px; color:var(--muted);">{{ post.category }}</span>
               </div>
+              <button class="btn btn-sm btn-outline-danger" type="button" onclick="removeBookmark({{ post.id }}, this)">
+                  <span data-lucide="trash-2"></span>
+              </button>
           </div>
           {% endfor %}
       {% else %}
@@ -668,13 +671,25 @@
             .then(data => {
                 let html = "";
                 data.forEach(p => {
-                    html += `<div style="padding:8px; border-bottom:1px solid #eee;">
-                        <a href="/post/${p.id}" style="text-decoration:none; color:var(--text); font-weight:bold; font-size:13px;">${p.title}</a>
+                    html += `<div style="display:flex; gap:10px; align-items:center; padding:8px; border-bottom:1px solid #eee;">
+                        <img src="/static/uploads/${p.thumbnail}" alt="${p.title}" style="width:44px; height:44px; border-radius:8px; object-fit:cover;">
+                        <div>
+                          <a href="/post/${p.id}" style="text-decoration:none; color:var(--text); font-weight:bold; font-size:13px; display:block;">${p.title}</a>
+                          <span style="font-size:11px; color:var(--muted);">${p.category}</span>
+                        </div>
                     </div>`;
                 });
                 searchResults.innerHTML = html || "<div style='padding:8px; color:var(--muted);'>No results</div>";
             });
         });
+    }
+
+    function removeBookmark(postId, btn){
+        fetch(`/api/bookmark/${postId}`, { method: "POST" })
+          .then(() => {
+            const item = btn.closest(".bookmarkItem");
+            if (item) item.remove();
+          });
     }
   </script>
 </body>

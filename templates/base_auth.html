@@ -1,106 +1,464 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Writo • Authentication</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Writo • Authentication</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
 
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
 
-    <script src="https://unpkg.com/lucide@latest"></script>
+    :root{
+      --bg:#f1f5f9;
+      --text:#0f172a;
+      --muted:#64748b;
 
-    <style>
-        :root {
-            --primary: #0f172a;
-            --text: #334155;
-            --muted: #64748b;
-            --bg: #f1f5f9;
-        }
+      --headerGlass: rgba(255,255,255,0.86);
+      --headerBlur: 6px;
 
-        body { 
-            font-family: 'Outfit', sans-serif; 
-            background-color: var(--bg); 
-            color: var(--text);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
+      --softHover: rgba(15,23,42,0.06);
+      --overlay: rgba(0,0,0,0.18);
 
-        /* Auth Card Style */
-        .auth-card {
-            background: white;
-            width: 100%;
-            max-width: 420px;
-            padding: 40px;
-            border-radius: 24px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.04);
-            border: 1px solid #e2e8f0;
-        }
+      --card:#ffffff;
+      --border:#eef0f6;
+      --soft:#f8fafc;
+      --softBorder:#e2e8f0;
+    }
 
-        /* Logo */
-        .brand-logo {
-            font-size: 1.8rem; font-weight: 800; color: var(--primary);
-            text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;
-            margin-bottom: 10px;
-        }
+    body[data-theme="dark"]{
+      --bg:#0A0A0A;
+      --text:#e5e7eb;
+      --muted:#a1a1aa;
 
-        /* Inputs */
-        .form-control {
-            padding: 12px 16px; border-radius: 12px; border: 1px solid #e2e8f0;
-            font-size: 0.95rem; background: #f8fafc;
-        }
-        .form-control:focus {
-            background: #fff; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1);
-        }
-        .form-label { font-weight: 600; font-size: 0.9rem; color: var(--text); margin-bottom: 6px; }
+      --headerGlass: rgba(10,10,10,0.78);
+      --headerBlur: 7px;
 
-        /* Buttons */
-        .btn-primary {
-            background: var(--primary); border: none; padding: 12px;
-            border-radius: 99px; font-weight: 600; width: 100%; margin-top: 10px;
-            transition: 0.2s;
-        }
-        .btn-primary:hover { background: #1e293b; transform: translateY(-1px); }
+      --softHover: rgba(255,255,255,0.08);
+      --overlay: rgba(0,0,0,0.35);
 
-        /* Links */
-        .auth-link { color: var(--primary); text-decoration: none; font-weight: 600; }
-        .auth-link:hover { text-decoration: underline; }
+      --card: rgba(255,255,255,0.06);
+      --border: rgba(255,255,255,0.10);
+      --soft: rgba(255,255,255,0.06);
+      --softBorder: rgba(255,255,255,0.12);
+    }
 
-        /* Flash Messages */
-        .alert { border-radius: 12px; font-size: 0.9rem; border: none; }
-        .alert-danger { background: #fee2e2; color: #991b1b; }
-        .alert-success { background: #dcfce7; color: #166534; }
-    </style>
+    body{
+      font-family:'Outfit', system-ui, sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      overflow-x:hidden;
+    }
+
+    .pageBlur{transition:filter .18s ease;will-change:filter}
+    body.menuOpen .pageBlur{filter:blur(6px)}
+
+    .writoHeader{
+      position:sticky; top:0; z-index:1000;
+      background: var(--headerGlass);
+      backdrop-filter: blur(var(--headerBlur)) saturate(115%);
+      -webkit-backdrop-filter: blur(var(--headerBlur)) saturate(115%);
+      border-bottom:1px solid rgba(255,255,255,0.10);
+      box-shadow:0 2px 10px rgba(15,23,42,0.06);
+      height:56px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding-left:28px;
+      padding-right:20px;
+    }
+    body[data-theme="dark"] .writoHeader{
+      border-bottom:1px solid rgba(255,255,255,0.08);
+      box-shadow:0 6px 18px rgba(0,0,0,0.35);
+    }
+    .writoHeaderLeft{display:flex;align-items:center;gap:14px}
+    .writoBrand{font-size:18px;font-weight:700;letter-spacing:-0.5px}
+
+    .writoIconBtn{
+      width:34px;height:34px;
+      border:none;background:transparent;
+      display:inline-flex;align-items:center;justify-content:center;
+      cursor:pointer;padding:0;color:var(--text);
+      user-select:none;border-radius:12px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .writoIconBtn:hover{background:var(--softHover)}
+    .writoIconBtn:active{transform:scale(.98)}
+    .writoHeaderRight{display:flex;align-items:center;gap:16px}
+    svg.lucide{width:20px;height:20px;stroke-width:1.5}
+
+    .writoOverlay{
+      position:fixed; inset:0;
+      background:var(--overlay);
+      opacity:0; pointer-events:none;
+      transition:.16s ease;
+      z-index:1200;
+    }
+    body.hasOverlay .writoOverlay{opacity:1;pointer-events:auto}
+
+    .writoMenu{
+      position:fixed; top:0; left:0;
+      width:230px; height:100vh;
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(14px) saturate(140%);
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
+      border-right:1px solid rgba(255,255,255,0.4);
+      transform:translateX(-100%);
+      transition:.20s ease;
+      z-index:1300;
+      padding:16px;
+      pointer-events:none;
+    }
+    body[data-theme="dark"] .writoMenu{
+      background: rgba(10,10,10,0.60);
+      border-right:1px solid rgba(255,255,255,0.14);
+    }
+    body.menuOpen .writoMenu{transform:translateX(0);pointer-events:auto}
+
+    .writoMenuHeader{display:flex;justify-content:flex-end;margin-bottom:16px}
+    .writoMenuHeader .writoIconBtn{background: rgba(255,255,255,0.20)}
+    body[data-theme="dark"] .writoMenuHeader .writoIconBtn{background: rgba(255,255,255,0.06)}
+    .writoMenuItem{
+      width:100%;
+      display:flex; align-items:center; gap:14px;
+      font-size:15px;
+      padding:12px 0;
+      cursor:pointer;
+      border:none;
+      background:transparent;
+      border-bottom:1px solid rgba(0,0,0,0.12);
+      color:var(--text);
+      font-weight:300;
+      text-align:left;
+      -webkit-tap-highlight-color: transparent;
+      text-decoration:none;
+    }
+    body[data-theme="dark"] .writoMenuItem{border-bottom:1px solid rgba(255,255,255,0.12)}
+    .writoMenuItem:last-child{border-bottom:none}
+
+    .writoModal{
+      position:fixed;
+      left:50%;
+      top:86px;
+      transform: translateX(-50%) translateY(8px);
+      width: min(520px, calc(100vw - 28px));
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(14px) saturate(140%);
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
+      border:1px solid rgba(255,255,255,0.35);
+      border-radius:18px;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.15);
+      z-index:1400;
+      opacity:0;
+      pointer-events:none;
+      transition: .16s ease;
+      will-change: transform, opacity;
+      contain: paint;
+    }
+    body[data-theme="dark"] .writoModal{
+      background: rgba(10,10,10,0.64);
+      border:1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+    }
+    .writoModal.open{
+      opacity:1;
+      pointer-events:auto;
+      transform: translateX(-50%) translateY(0);
+    }
+    .writoModalInner{padding:14px}
+    .writoModalHead{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding-bottom:10px;
+      border-bottom:1px solid rgba(0,0,0,0.10);
+      margin-bottom:12px;
+    }
+    body[data-theme="dark"] .writoModalHead{border-bottom:1px solid rgba(255,255,255,0.12)}
+    .writoModalTitle{
+      display:flex; align-items:center; gap:10px;
+      font-size:14px; font-weight:700;
+    }
+    .writoModalClose{
+      width:34px;height:34px;border-radius:12px;
+      border:1px solid rgba(0,0,0,0.10);
+      background: rgba(255,255,255,0.30);
+      display:inline-flex;align-items:center;justify-content:center;
+      cursor:pointer;color:var(--text);
+      -webkit-tap-highlight-color: transparent;
+    }
+    body[data-theme="dark"] .writoModalClose{
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+    }
+    .writoModalClose:active{transform:scale(.98)}
+
+    .writoSearchInput{
+      width:100%;
+      height:40px;
+      border-radius:14px;
+      border:1px solid rgba(0,0,0,0.10);
+      background: rgba(255,255,255,0.55);
+      padding:0 12px;
+      font-family:inherit;
+      font-size:13px;
+      color:var(--text);
+      outline:none;
+    }
+    body[data-theme="dark"] .writoSearchInput{
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+    }
+    .writoHint{
+      margin-top:10px;
+      font-size:12px;
+      font-weight:300;
+      color:var(--muted);
+      line-height:1.5;
+    }
+    .writoPillGrid{display:flex;flex-wrap:wrap;gap:8px}
+    .writoLangPill{
+      padding:8px 10px;border-radius:999px;
+      border:1px solid rgba(0,0,0,0.10);
+      background: rgba(255,255,255,0.35);
+      font-size:12px;font-weight:400;color:var(--text);
+      cursor:not-allowed; user-select:none;
+    }
+    body[data-theme="dark"] .writoLangPill{
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+    }
+    .writoEmpty{
+      padding:12px;border-radius:16px;
+      border:1px solid rgba(0,0,0,0.10);
+      background: rgba(255,255,255,0.35);
+      color:var(--muted);
+      font-size:12px;font-weight:300;line-height:1.55;
+    }
+    body[data-theme="dark"] .writoEmpty{
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+    }
+
+    @media(max-width:520px){
+      .writoHeader{padding-left:26px;padding-right:18px}
+      .writoHeaderRight{gap:14px}
+      .writoIconBtn{width:33px;height:33px}
+      .writoModal{top:74px}
+    }
+
+    .wrap{max-width:520px;margin:0 auto;padding:14px}
+  </style>
 </head>
-<body>
 
-    <main class="auth-card">
-        <div class="text-center mb-4">
-            <a href="/" class="brand-logo">
-                <i data-lucide="pen-tool"></i> Writo
-            </a>
-            <p class="text-muted small">Welcome back to your creative space.</p>
+<body data-theme="light">
+  <div class="pageBlur">
+    <header class="writoHeader">
+      <div class="writoHeaderLeft">
+        <button class="writoIconBtn" id="writoOpenMenu" type="button" aria-label="Open menu">
+          <span data-lucide="menu"></span>
+        </button>
+        <div class="writoBrand">Writo</div>
+      </div>
+
+      <div class="writoHeaderRight">
+        <button class="writoIconBtn" id="writoBtnSearch" type="button" aria-label="Search">
+          <span data-lucide="search"></span>
+        </button>
+        <button class="writoIconBtn" id="writoBtnBookmark" type="button" aria-label="Bookmarks">
+          <span data-lucide="bookmark"></span>
+        </button>
+        <button class="writoIconBtn" id="writoBtnTranslate" type="button" aria-label="Translate">
+          <span data-lucide="languages"></span>
+        </button>
+
+        <button class="writoIconBtn" id="writoBtnTheme" type="button" aria-label="Toggle theme">
+          <span id="writoIconMoon" data-lucide="moon"></span>
+          <span id="writoIconSun" data-lucide="sun" style="display:none"></span>
+        </button>
+      </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="wrap">
+          {% for category, message in messages %}
+            <div class="writoEmpty" style="margin-bottom:10px;">{{ message }}</div>
+          {% endfor %}
         </div>
+      {% endif %}
+    {% endwith %}
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} mb-4" role="alert">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+    {% block content %}{% endblock %}
+  </div>
 
-        {% block content %}{% endblock %}
+  <div class="writoOverlay" id="writoOverlay"></div>
 
-    </main>
+  <aside class="writoMenu" id="writoMenu">
+    <div class="writoMenuHeader">
+      <button class="writoIconBtn" id="writoCloseMenu" type="button" aria-label="Close menu">
+        <span data-lucide="x"></span>
+      </button>
+    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script> lucide.createIcons(); </script>
+    <a class="writoMenuItem" href="{{ url_for('index') }}"><span data-lucide="home"></span><span>Home</span></a>
+    <a class="writoMenuItem" href="{{ url_for('all_posts') }}"><span data-lucide="layout-grid"></span><span>Categories</span></a>
+    <a class="writoMenuItem" href="{{ url_for('all_posts') }}"><span data-lucide="clock"></span><span>Latest</span></a>
+    <a class="writoMenuItem" href="{{ url_for('index') }}"><span data-lucide="flame"></span><span>Trending</span></a>
+    <a class="writoMenuItem" href="{{ url_for('all_posts') }}"><span data-lucide="star"></span><span>Featured</span></a>
+  </aside>
+
+  <section class="writoModal" id="writoModalSearch" aria-hidden="true">
+    <div class="writoModalInner">
+      <div class="writoModalHead">
+        <div class="writoModalTitle"><span data-lucide="search"></span> Search</div>
+        <button class="writoModalClose" type="button" data-writo-close aria-label="Close">
+          <span data-lucide="x"></span>
+        </button>
+      </div>
+      <input class="writoSearchInput" id="writoSearchInput" type="search" placeholder="Type to search…" />
+      <div class="writoHint">ইউজার এখানে লিখতে পারবে (ডেমো)। এখন সার্চ কাজ করবে না।</div>
+    </div>
+  </section>
+
+  <section class="writoModal" id="writoModalTranslate" aria-hidden="true">
+    <div class="writoModalInner">
+      <div class="writoModalHead">
+        <div class="writoModalTitle"><span data-lucide="languages"></span> Translate</div>
+        <button class="writoModalClose" type="button" data-writo-close aria-label="Close">
+          <span data-lucide="x"></span>
+        </button>
+      </div>
+
+      <div class="writoPillGrid">
+        <div class="writoLangPill">বাংলা</div>
+        <div class="writoLangPill">English</div>
+        <div class="writoLangPill">हिन्दी</div>
+        <div class="writoLangPill">اردو</div>
+        <div class="writoLangPill">العربية</div>
+      </div>
+      <div class="writoHint">ভাষা সিলেক্ট UI থাকবে, কিন্তু এখন কাজ করবে না।</div>
+    </div>
+  </section>
+
+  <section class="writoModal" id="writoModalSaved" aria-hidden="true">
+    <div class="writoModalInner">
+      <div class="writoModalHead">
+        <div class="writoModalTitle"><span data-lucide="bookmark"></span> Saved</div>
+        <button class="writoModalClose" type="button" data-writo-close aria-label="Close">
+          <span data-lucide="x"></span>
+        </button>
+      </div>
+
+      <div class="writoEmpty">
+        এখনো কোনো পোস্ট সেভ করা হয়নি। (ডেমো) <br>
+        পরে এখানে সেভ করা পোস্টগুলো দেখাবে — আপাতত কাজ করবে না।
+      </div>
+    </div>
+  </section>
+
+  <script>
+    lucide.createIcons();
+
+    const W = {
+      body: document.body,
+      overlay: document.getElementById("writoOverlay"),
+      openMenu: document.getElementById("writoOpenMenu"),
+      closeMenu: document.getElementById("writoCloseMenu"),
+
+      modalSearch: document.getElementById("writoModalSearch"),
+      modalTranslate: document.getElementById("writoModalTranslate"),
+      modalSaved: document.getElementById("writoModalSaved"),
+
+      btnSearch: document.getElementById("writoBtnSearch"),
+      btnTranslate: document.getElementById("writoBtnTranslate"),
+      btnBookmark: document.getElementById("writoBtnBookmark"),
+
+      searchInput: document.getElementById("writoSearchInput"),
+
+      btnTheme: document.getElementById("writoBtnTheme"),
+      iconMoon: document.getElementById("writoIconMoon"),
+      iconSun: document.getElementById("writoIconSun"),
+    };
+
+    function applyTheme(theme){
+      W.body.setAttribute("data-theme", theme);
+      const isDark = theme === "dark";
+      W.iconMoon.style.display = isDark ? "none" : "inline-block";
+      W.iconSun.style.display  = isDark ? "inline-block" : "none";
+      localStorage.setItem("writoTheme", theme);
+    }
+    applyTheme(localStorage.getItem("writoTheme")==="dark" ? "dark" : "light");
+
+    W.btnTheme.addEventListener("click", () => {
+      const next = W.body.getAttribute("data-theme")==="dark" ? "light" : "dark";
+      applyTheme(next);
+    });
+
+    function anyOpen(){
+      return W.body.classList.contains("menuOpen")
+        || W.modalSearch.classList.contains("open")
+        || W.modalTranslate.classList.contains("open")
+        || W.modalSaved.classList.contains("open");
+    }
+
+    function syncOverlay(){
+      if (anyOpen()) W.body.classList.add("hasOverlay");
+      else W.body.classList.remove("hasOverlay");
+    }
+
+    function closeAll(){
+      const ae = document.activeElement;
+      if (ae && ae.blur) ae.blur();
+
+      requestAnimationFrame(() => {
+        W.body.classList.remove("menuOpen");
+        W.modalSearch.classList.remove("open");
+        W.modalTranslate.classList.remove("open");
+        W.modalSaved.classList.remove("open");
+        syncOverlay();
+      });
+    }
+
+    W.openMenu.addEventListener("click", () => {
+      W.modalSearch.classList.remove("open");
+      W.modalTranslate.classList.remove("open");
+      W.modalSaved.classList.remove("open");
+      W.body.classList.add("menuOpen");
+      syncOverlay();
+    });
+
+    W.closeMenu.addEventListener("click", () => {
+      W.body.classList.remove("menuOpen");
+      syncOverlay();
+    });
+
+    function openModal(modal){
+      W.body.classList.remove("menuOpen");
+      W.modalSearch.classList.remove("open");
+      W.modalTranslate.classList.remove("open");
+      W.modalSaved.classList.remove("open");
+      modal.classList.add("open");
+      syncOverlay();
+
+      if(modal === W.modalSearch){
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            try{ W.searchInput.focus({preventScroll:true}); }
+            catch{ W.searchInput.focus(); }
+          });
+        });
+      }
+    }
+
+    W.btnSearch.addEventListener("click", () => openModal(W.modalSearch));
+    W.btnTranslate.addEventListener("click", () => openModal(W.modalTranslate));
+    W.btnBookmark.addEventListener("click", () => openModal(W.modalSaved));
+
+    document.querySelectorAll("[data-writo-close]").forEach(btn => btn.addEventListener("click", closeAll));
+    W.overlay.addEventListener("click", closeAll);
+    window.addEventListener("keydown", (e) => { if(e.key==="Escape") closeAll(); });
+  </script>
 </body>
 </html>

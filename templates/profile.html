@@ -1,52 +1,437 @@
 {% extends layout %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white">My Profile</div>
-            <div class="card-body">
-                <div class="text-center mb-4">
-                    <img src="{{ url_for('static', filename='uploads/' + current_user.profile_pic) }}" class="rounded-circle mb-2" style="width: 120px; height: 120px; object-fit: cover;">
-                    <h3>{{ current_user.name or current_user.username }}</h3>
-                    <p class="text-muted">{{ current_user.role|upper }}</p>
-                </div>
+<style>
+  .wrap{max-width:520px;margin:0 auto;padding:14px}
 
-                <form method="POST" enctype="multipart/form-data">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label>Display Name</label>
-                            <input type="text" name="name" class="form-control" value="{{ current_user.name or '' }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label>Profile Picture</label>
-                            <input type="file" name="profile_pic" class="form-control">
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label>Bio</label>
-                        <textarea name="bio" class="form-control" rows="3">{{ current_user.bio or '' }}</textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label>Hobbies</label>
-                        <input type="text" name="hobbies" class="form-control" value="{{ current_user.hobbies or '' }}">
-                    </div>
-                    <button type="submit" class="btn btn-primary">Update Profile</button>
-                </form>
+  .panel{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:18px;
+    box-shadow:0 6px 18px rgba(16,24,40,.04);
+    overflow:hidden;
+  }
+  .panelHead{
+    padding:14px 16px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    border-bottom:1px solid var(--border);
+    background: rgba(255,255,255,0.20);
+    flex-wrap:wrap;
+  }
+  body[data-theme="dark"] .panelHead{background: rgba(255,255,255,0.04)}
+  .panelTitle{
+    display:flex;align-items:center;gap:10px;
+    font-size:13px;font-weight:800;letter-spacing:.1px;
+  }
+  .panelBody{padding:14px 16px}
 
-                <hr>
-                {% if current_user.role == 'user' %}
-                    <div class="text-center mt-4">
-                        {% if current_user.is_writer_applicant %}
-                            <button class="btn btn-secondary" disabled>Writer Application Pending...</button>
-                        {% else %}
-                            <h5>Want to write articles?</h5>
-                            <a href="/apply-writer" class="btn btn-outline-success">Request to become a Writer</a>
-                        {% endif %}
-                    </div>
-                {% endif %}
-            </div>
+  .note{
+    margin-top:8px;
+    font-size:12px;
+    font-weight:300;
+    color:var(--muted);
+    line-height:1.6;
+  }
+
+  .profileTop{
+    display:grid;
+    grid-template-columns: 92px 1fr;
+    gap:12px;
+    align-items:center;
+  }
+
+  .avatarBox{
+    width:92px;height:92px;
+    border-radius:999px;
+    overflow:hidden;
+    border:1px solid var(--softBorder);
+    background: rgba(15,23,42,0.06);
+    position:relative;
+  }
+  body[data-theme="dark"] .avatarBox{background: rgba(255,255,255,0.06)}
+  .avatarBox img{width:100%;height:100%;object-fit:cover;display:block}
+
+  .avatarBadge{
+    position:absolute;
+    right:6px;bottom:6px;
+    width:30px;height:30px;border-radius:999px;
+    border:1px solid rgba(0,0,0,0.10);
+    background: rgba(255,255,255,0.75);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--text);
+  }
+  body[data-theme="dark"] .avatarBadge{
+    border:1px solid rgba(255,255,255,0.12);
+    background: rgba(10,10,10,0.70);
+  }
+  .avatarBadge svg{width:16px;height:16px}
+
+  .btnRow{display:flex;gap:10px;flex-wrap:wrap}
+  .btn{
+    height:36px;
+    padding:0 12px;
+    border-radius:999px;
+    border:1px solid var(--softBorder);
+    background: rgba(255,255,255,0.35);
+    color:var(--text);
+    font-size:12px;
+    font-weight:800;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    user-select:none;
+    text-decoration:none;
+  }
+  body[data-theme="dark"] .btn{background: rgba(255,255,255,0.06)}
+  .btn:active{transform:scale(.98)}
+  .btn.primary{
+    background:#0f172a;
+    color:#fff;
+    border:1px solid rgba(15,23,42,0.30);
+  }
+  body[data-theme="dark"] .btn.primary{
+    background: rgba(255,255,255,0.14);
+    border:1px solid rgba(255,255,255,0.16);
+    color: var(--text);
+  }
+  .btn.danger{
+    background: rgba(239,68,68,0.10);
+    border:1px solid rgba(239,68,68,0.24);
+    color: var(--text);
+  }
+
+  .grid{
+    margin-top:14px;
+    display:grid;
+    gap:12px;
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .label{
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:.1px;
+    color:var(--text);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .label svg{width:16px;height:16px}
+
+  .input, .textarea{
+    width:100%;
+    border-radius:14px;
+    border:1px solid rgba(0,0,0,0.10);
+    background: rgba(255,255,255,0.55);
+    padding:10px 12px;
+    font-family:inherit;
+    font-size:13px;
+    color:var(--text);
+    outline:none;
+    transition:.12s ease;
+  }
+  body[data-theme="dark"] .input, body[data-theme="dark"] .textarea{
+    border:1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.06);
+  }
+  .textarea{min-height:110px;resize:vertical;line-height:1.6}
+
+  .countRow{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    font-size:11px;
+    font-weight:300;
+    color:var(--muted);
+  }
+
+  .pickWrap{
+    border:1px solid rgba(0,0,0,0.10);
+    background: rgba(255,255,255,0.35);
+    border-radius:16px;
+    padding:10px;
+  }
+  body[data-theme="dark"] .pickWrap{
+    border:1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.06);
+  }
+
+  .pickGrid{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .pickItem{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 10px;
+    border-radius:999px;
+    border:1px solid var(--softBorder);
+    background: rgba(255,255,255,0.35);
+    color:var(--text);
+    font-size:12px;
+    font-weight:800;
+    cursor:pointer;
+    user-select:none;
+    transition:.12s ease;
+  }
+  body[data-theme="dark"] .pickItem{background: rgba(255,255,255,0.06)}
+  .pickItem:active{transform:scale(.98)}
+  .pickItem.selected{
+    background: rgba(15,23,42,0.08);
+    border:1px solid rgba(15,23,42,0.20);
+  }
+  body[data-theme="dark"] .pickItem.selected{
+    background: rgba(255,255,255,0.12);
+    border:1px solid rgba(255,255,255,0.18);
+  }
+
+  .subNoteRow{
+    margin-top:10px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    flex-wrap:wrap;
+    font-size:11px;
+    font-weight:300;
+    color:var(--muted);
+  }
+  .smallBtn{
+    height:32px;
+    padding:0 10px;
+    border-radius:999px;
+    border:1px solid var(--softBorder);
+    background: rgba(255,255,255,0.35);
+    color:var(--text);
+    font-size:11px;
+    font-weight:900;
+    cursor:pointer;
+  }
+  body[data-theme="dark"] .smallBtn{background: rgba(255,255,255,0.06)}
+  .smallBtn:active{transform:scale(.98)}
+</style>
+
+<main class="wrap">
+  <section class="panel" aria-label="Manage profile">
+    <form method="POST" enctype="multipart/form-data">
+      <div class="panelHead">
+        <div class="panelTitle"><span data-lucide="user-cog"></span> Manage Profile</div>
+        <div class="btnRow">
+          <a class="btn" href="{{ url_for('public_profile', username=current_user.username) }}">
+            <span data-lucide="external-link"></span> Preview
+          </a>
+          <button class="btn primary" type="submit"><span data-lucide="save"></span> Save</button>
         </div>
-    </div>
-</div>
+      </div>
+
+      <div class="panelBody">
+        <div class="profileTop">
+          <div class="avatarBox" aria-label="Profile picture preview">
+            <img id="avatarPreview" src="{{ url_for('static', filename='uploads/' + current_user.profile_pic) }}" alt="Profile avatar preview">
+            <div class="avatarBadge" title="Change photo">
+              <span data-lucide="camera"></span>
+            </div>
+          </div>
+
+          <div>
+            <div class="btnRow">
+              <label class="btn" for="photoInput">
+                <span data-lucide="upload"></span> Upload Photo
+              </label>
+              <button class="btn danger" type="button" id="btnRemovePhoto">
+                <span data-lucide="trash-2"></span> Remove
+              </button>
+              <input id="photoInput" name="profile_pic" type="file" accept="image/*" hidden>
+            </div>
+            <div class="note">ইউজার ছবি আপলোড করলে এখানে প্রিভিউ দেখাবে।</div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="field">
+            <div class="label"><span data-lucide="badge"></span> Display Name</div>
+            <input class="input" id="nameInput" name="name" type="text" value="{{ current_user.name or '' }}" placeholder="Your public name">
+          </div>
+
+          <div class="field">
+            <div class="label"><span data-lucide="quote"></span> Bio / Intro</div>
+            <textarea class="textarea" id="bioInput" name="bio" maxlength="260" placeholder="Write a short intro (max 260 chars)">{{ current_user.bio or '' }}</textarea>
+            <div class="countRow">
+              <span>Public bio will be shown on your profile.</span>
+              <span id="bioCount">0/260</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="label"><span data-lucide="sparkles"></span> Hobbies (select up to 3)</div>
+            <div class="pickWrap">
+              <div class="pickGrid" id="hobbyPick"></div>
+              <div class="subNoteRow">
+                <span id="hobbyCount">0/3 selected</span>
+                <button class="smallBtn" type="button" id="hobbyClear"><span style="margin-right:6px">✕</span> Clear</button>
+              </div>
+            </div>
+            <input type="hidden" id="hobbyInput" name="hobbies" value="{{ current_user.hobbies or '' }}">
+            <div class="note">এখান থেকে সিলেক্ট করতে হবে — ইউজার নতুন হবি লিখতে পারবে না।</div>
+          </div>
+
+          <div class="field">
+            <div class="label"><span data-lucide="layout-grid"></span> Categories (select up to 3)</div>
+            <div class="pickWrap">
+              <div class="pickGrid" id="catPick"></div>
+              <div class="subNoteRow">
+                <span id="catCount">0/3 selected</span>
+                <button class="smallBtn" type="button" id="catClear"><span style="margin-right:6px">✕</span> Clear</button>
+              </div>
+            </div>
+            <div class="note">প্রোফাইলে সর্বোচ্চ ৩টি ক্যাটাগরি দেখাবে (UI only).</div>
+          </div>
+        </div>
+
+        {% if current_user.role == 'user' %}
+          <div style="margin-top:16px;">
+            {% if current_user.is_writer_applicant %}
+              <button class="btn" type="button" disabled>Writer Application Pending...</button>
+            {% else %}
+              <div class="note" style="margin-bottom:8px;">Want to write articles?</div>
+              <a href="{{ url_for('apply_writer') }}" class="btn">Request to become a Writer</a>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </form>
+  </section>
+</main>
+
+<script>
+  lucide.createIcons();
+
+  const UI = {
+    avatarPreview: document.getElementById("avatarPreview"),
+    photoInput: document.getElementById("photoInput"),
+    btnRemovePhoto: document.getElementById("btnRemovePhoto"),
+    bioInput: document.getElementById("bioInput"),
+    bioCount: document.getElementById("bioCount"),
+    hobbyPick: document.getElementById("hobbyPick"),
+    hobbyCount: document.getElementById("hobbyCount"),
+    hobbyClear: document.getElementById("hobbyClear"),
+    hobbyInput: document.getElementById("hobbyInput"),
+    catPick: document.getElementById("catPick"),
+    catCount: document.getElementById("catCount"),
+    catClear: document.getElementById("catClear"),
+  };
+
+  const HOBBIES = [
+    "Photography","Reading","Gaming","Cooking","Travel","Music","Movies","Drawing","Painting","Writing",
+    "Cycling","Running","Gym","Yoga","Swimming","Cricket","Football","Badminton","Gardening","Fishing",
+    "Chess","Coding","DIY Crafts","Podcast","Blogging","Meditation","Hiking","Collecting","Volunteering","Dancing"
+  ];
+
+  const CATEGORIES = [
+    "AI","Technology","Programming","Web Development","Design","UI/UX","Business","Startups","Marketing","Productivity",
+    "Education","Science","Health","Fitness","Lifestyle","Travel","Food","Finance","News","Entertainment",
+    "Movies","Music","Sports","Gaming","Photography","Writing","Books","Career","Security","Mobile"
+  ];
+
+  function setBioCount(){
+    const n = (UI.bioInput.value || "").length;
+    UI.bioCount.textContent = n + "/260";
+  }
+  UI.bioInput.addEventListener("input", setBioCount);
+  setBioCount();
+
+  function togglePick(list, value, max){
+    const idx = list.findIndex(x => x.toLowerCase() === value.toLowerCase());
+    if(idx >= 0){
+      list.splice(idx, 1);
+      return false;
+    }
+    if(list.length >= max){
+      return false;
+    }
+    list.push(value);
+    return true;
+  }
+
+  function renderPick(container, options, selectedList, onToggle){
+    container.innerHTML = "";
+    options.forEach(opt => {
+      const el = document.createElement("button");
+      el.type = "button";
+      el.className = "pickItem";
+      el.textContent = opt;
+
+      const isSel = selectedList.some(x => x.toLowerCase() === opt.toLowerCase());
+      if(isSel) el.classList.add("selected");
+
+      el.addEventListener("click", () => onToggle(opt));
+      container.appendChild(el);
+    });
+  }
+
+  const initialHobbies = (UI.hobbyInput.value || "").split(",").map(x => x.trim()).filter(Boolean).slice(0, 3);
+  const selectedHobbies = [...initialHobbies];
+  const selectedCategories = [];
+
+  function updateCounts(){
+    UI.hobbyCount.textContent = selectedHobbies.length + "/3 selected";
+    UI.catCount.textContent = selectedCategories.length + "/3 selected";
+    UI.hobbyInput.value = selectedHobbies.join(", ");
+  }
+
+  function renderAll(){
+    renderPick(UI.hobbyPick, HOBBIES, selectedHobbies, (opt)=>{
+      const ok = togglePick(selectedHobbies, opt, 3);
+      if(!ok) return;
+      renderAll();
+    });
+
+    renderPick(UI.catPick, CATEGORIES, selectedCategories, (opt)=>{
+      const ok = togglePick(selectedCategories, opt, 3);
+      if(!ok) return;
+      renderAll();
+    });
+
+    updateCounts();
+  }
+
+  UI.hobbyClear.addEventListener("click", ()=>{
+    selectedHobbies.length = 0;
+    renderAll();
+  });
+  UI.catClear.addEventListener("click", ()=>{
+    selectedCategories.length = 0;
+    renderAll();
+  });
+
+  UI.photoInput.addEventListener("change", () => {
+    const f = UI.photoInput.files && UI.photoInput.files[0];
+    if(!f) return;
+    if(!f.type.startsWith("image/")){
+      UI.photoInput.value = "";
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      UI.avatarPreview.src = String(reader.result || "");
+    };
+    reader.readAsDataURL(f);
+  });
+
+  UI.btnRemovePhoto.addEventListener("click", () => {
+    UI.photoInput.value = "";
+    UI.avatarPreview.src = "{{ url_for('static', filename='uploads/' + current_user.profile_pic) }}";
+  });
+
+  renderAll();
+</script>
 {% endblock %}

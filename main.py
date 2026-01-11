@@ -1,11 +1,15 @@
 import os
+import hashlib
+import math
+import re
+from collections import defaultdict
 from flask import Flask, render_template, redirect, url_for, request, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from sqlalchemy import func, desc
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # --- CONFIGURATION ---
 app = Flask(__name__)
@@ -21,6 +25,7 @@ db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+app_start_time = datetime.utcnow()
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
@@ -60,6 +65,7 @@ class CommentReport(db.Model):
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
+    email = db.Column(db.String(150), unique=True, nullable=True)
     password = db.Column(db.String(150), nullable=False)
     role = db.Column(db.String(50), default='user') 
     is_writer_applicant = db.Column(db.Boolean, default=False)
@@ -103,6 +109,19 @@ class Comment(db.Model):
     # Reports relation
     reports = db.relationship('CommentReport', backref='comment', cascade="all, delete", lazy=True)
 
+class PageView(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    path = db.Column(db.String(200), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    visitor_id = db.Column(db.String(64), nullable=False)
+
+class ErrorLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    path = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.String(300), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -110,11 +129,62 @@ def load_user(user_id):
 @app.context_processor
 def inject_layout():
     if request.endpoint == 'post_detail': return dict(layout='base_post.html')
-    if request.endpoint in ['index', 'public_profile', 'all_posts']: return dict(layout='base_user.html')
+    if request.endpoint in ['index', 'public_profile', 'all_posts', 'writers']: return dict(layout='base_user.html')
     if not current_user.is_authenticated: return dict(layout='base_user.html')
     if current_user.role == 'writer': return dict(layout='base_writer.html')
     elif current_user.role == 'admin': return dict(layout='base_admin.html')
     else: return dict(layout='base_user.html')
+
+def _should_track_view():
+    if request.method != 'GET':
+        return False
+    if request.path.startswith('/static'):
+        return False
+    if request.path.startswith('/admin'):
+        return False
+    if request.path.startswith('/api'):
+        return False
+    return True
+
+def _build_visitor_id():
+    if current_user.is_authenticated:
+        return f'user-{current_user.id}'
+    raw = f"{request.remote_addr}-{request.headers.get('User-Agent', '')}"
+    return hashlib.sha256(raw.encode('utf-8')).hexdigest()
+
+def estimate_reading_time(content, words_per_minute=200):
+    if not content:
+        return 1
+    text = re.sub(r'<[^>]+>', ' ', content)
+    words = re.findall(r'\b\w+\b', text)
+    minutes = math.ceil(len(words) / words_per_minute)
+    return max(1, minutes)
+
+@app.before_request
+def track_page_view():
+    if not _should_track_view():
+        return
+    try:
+        view = PageView(
+            path=request.path,
+            user_id=current_user.id if current_user.is_authenticated else None,
+            visitor_id=_build_visitor_id()
+        )
+        db.session.add(view)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+@app.teardown_request
+def log_server_error(exception=None):
+    if exception is None:
+        return
+    try:
+        error = ErrorLog(path=request.path, message=str(exception)[:300])
+        db.session.add(error)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
 # --- API ROUTES ---
 @app.route('/api/search')
@@ -208,13 +278,27 @@ def index():
         cat_posts = BlogPost.query.filter_by(status='active', category=cat_name).order_by(BlogPost.date_posted.desc()).limit(3).all()
         category_data.append({'name': cat_name, 'posts': cat_posts})
     top_writers = User.query.filter_by(role='writer').limit(5).all()
-    return render_template('index.html', trending=trending, latest=latest, category_data=category_data, top_writers=top_writers)
+    latest_reading_times = {post.id: estimate_reading_time(post.content) for post in latest}
+    return render_template('index.html', trending=trending, latest=latest, category_data=category_data, top_writers=top_writers, latest_reading_times=latest_reading_times)
+
+@app.route('/writers')
+def writers():
+    writer_rows = (
+        db.session.query(User, func.count(BlogPost.id).label('post_count'))
+        .outerjoin(BlogPost, (BlogPost.author_id == User.id) & (BlogPost.status == 'active'))
+        .filter(User.role == 'writer')
+        .group_by(User.id)
+        .order_by(desc('post_count'), User.username.asc())
+        .all()
+    )
+    return render_template('writers.html', writer_rows=writer_rows, total_writers=len(writer_rows))
 
 @app.route('/all-posts')
 def all_posts():
     page = request.args.get('page', 1, type=int)
     pagination = BlogPost.query.filter_by(status='active').order_by(BlogPost.date_posted.desc()).paginate(page=page, per_page=20, error_out=False)
-    return render_template('all_posts.html', pagination=pagination)
+    reading_times = {post.id: estimate_reading_time(post.content) for post in pagination.items}
+    return render_template('all_posts.html', pagination=pagination, reading_times=reading_times)
 
 @app.route('/post/<int:post_id>')
 def post_detail(post_id):
@@ -223,15 +307,38 @@ def post_detail(post_id):
         if not current_user.is_authenticated or (current_user.role != 'admin' and current_user.id != post.author_id):
             flash('This post is not available.', 'warning')
             return redirect(url_for('index'))
-    return render_template('post_detail.html', post=post)
+    reading_time_minutes = estimate_reading_time(post.content)
+    return render_template('post_detail.html', post=post, reading_time_minutes=reading_time_minutes)
 
 @app.route('/u/<username>')
 def public_profile(username):
     user = User.query.filter_by(username=username).first_or_404()
+    page = request.args.get('page', 1, type=int)
     posts = []
+    total_posts = 0
+    total_pages = 1
     if user.role == 'writer':
-        posts = BlogPost.query.filter_by(author_id=user.id, status='active').order_by(BlogPost.date_posted.desc()).all()
-    return render_template('public_profile.html', user=user, posts=posts)
+        base_query = BlogPost.query.filter_by(author_id=user.id, status='active').order_by(BlogPost.date_posted.desc())
+        total_posts = base_query.count()
+        if total_posts > 5:
+            total_pages = 1 + ((total_posts - 5 + 9) // 10)
+        page = max(1, min(page, total_pages))
+        if page == 1:
+            posts = base_query.limit(5).all()
+        else:
+            offset = 5 + (page - 2) * 10
+            posts = base_query.offset(offset).limit(10).all()
+    reading_times = {post.id: estimate_reading_time(post.content) for post in posts}
+    hobbies = [h.strip() for h in (user.hobbies or '').split(',') if h.strip()]
+    categories = []
+    seen = set()
+    for post in posts:
+        if post.category and post.category not in seen:
+            seen.add(post.category)
+            categories.append(post.category)
+        if len(categories) == 3:
+            break
+    return render_template('public_profile.html', user=user, posts=posts, reading_times=reading_times, hobbies=hobbies, categories=categories, page=page, total_pages=total_pages)
 
 @app.route('/post/<int:post_id>/comment', methods=['POST'])
 @login_required
@@ -265,24 +372,34 @@ def apply_writer():
 def signup():
     if request.method == 'POST':
         username = request.form.get('username')
+        email = request.form.get('email')
+        full_name = request.form.get('full_name')
         password = request.form.get('password')
         role = 'admin' if username.lower() == 'admin' else 'user'
-        new_user = User(username=username, password=generate_password_hash(password, method='pbkdf2:sha256'), role=role)
+        new_user = User(
+            username=username,
+            email=email,
+            name=full_name,
+            password=generate_password_hash(password, method='pbkdf2:sha256'),
+            role=role
+        )
         try:
             db.session.add(new_user)
             db.session.commit()
             flash('Account created! Please login.', 'success')
             return redirect(url_for('login'))
         except:
-            flash('Username already exists.', 'danger')
+            flash('Username or email already exists.', 'danger')
     return render_template('signup.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form.get('username')
+        identifier = request.form.get('identifier')
         password = request.form.get('password')
-        user = User.query.filter_by(username=username).first()
+        user = User.query.filter(
+            (User.username == identifier) | (User.email == identifier)
+        ).first()
         if user and check_password_hash(user.password, password):
             login_user(user)
             if user.is_suspended: flash('Your account is suspended. Posting/Commenting is restricted.', 'warning')
@@ -323,7 +440,8 @@ def dashboard_admin():
     if current_user.role != 'admin': return redirect(url_for('index'))
     return render_template('dashboard_admin.html', 
                            pending_posts=BlogPost.query.filter_by(status='pending').all(), 
-                           writer_applicants=User.query.filter_by(is_writer_applicant=True, role='user').all())
+                           writer_applicants=User.query.filter_by(is_writer_applicant=True, role='user').all(),
+                           post_report_count=PostReport.query.count())
 
 @app.route('/admin/users')
 @login_required
@@ -338,6 +456,93 @@ def admin_users():
     elif filter_type == 'active': query = query.filter_by(is_suspended=False)
     users = query.order_by(User.id.desc()).all()
     return render_template('admin_users.html', users=users, filter_type=filter_type, search_query=search_query)
+
+@app.route('/admin/site-status')
+@login_required
+def admin_site_status():
+    if current_user.role != 'admin': return redirect(url_for('index'))
+    now = datetime.utcnow()
+    last_24h = now - timedelta(hours=24)
+    total_views = PageView.query.count()
+    unique_visitors = db.session.query(PageView.visitor_id).distinct().count()
+    published_posts = BlogPost.query.filter_by(status='active').count()
+    total_post_likes = db.session.query(post_likes).count()
+    engagement_rate = (total_post_likes / total_views * 100) if total_views else 0
+
+    views_last_24h = PageView.query.filter(PageView.created_at >= last_24h).count()
+    top_page_row = db.session.query(PageView.path, func.count(PageView.id).label('view_count'))\
+        .filter(PageView.created_at >= last_24h)\
+        .group_by(PageView.path).order_by(desc('view_count')).first()
+    top_page = top_page_row.path if top_page_row else 'No traffic yet'
+
+    recent_views = PageView.query.filter(PageView.created_at >= last_24h).all()
+    visitor_times = defaultdict(list)
+    for view in recent_views:
+        visitor_times[view.visitor_id].append(view.created_at)
+    session_durations = []
+    bounce_visitors = 0
+    for times in visitor_times.values():
+        if len(times) == 1:
+            bounce_visitors += 1
+            continue
+        session_durations.append((max(times) - min(times)).total_seconds())
+    avg_time_seconds = int(sum(session_durations) / len(session_durations)) if session_durations else 0
+    avg_minutes, avg_seconds = divmod(avg_time_seconds, 60)
+    avg_hours, avg_minutes = divmod(avg_minutes, 60)
+    if avg_hours:
+        avg_time_display = f"{avg_hours}h {avg_minutes}m"
+    elif avg_minutes:
+        avg_time_display = f"{avg_minutes}m {avg_seconds}s"
+    else:
+        avg_time_display = f"{avg_seconds}s"
+    bounce_rate = (bounce_visitors / len(visitor_times) * 100) if visitor_times else 0
+
+    errors_today = ErrorLog.query.filter(ErrorLog.created_at >= now.replace(hour=0, minute=0, second=0, microsecond=0)).count()
+    uptime_seconds = int((now - app_start_time).total_seconds())
+    uptime_percent = 100.0
+
+    return render_template(
+        'admin_site_status.html',
+        total_views=f"{total_views:,}",
+        unique_visitors=f"{unique_visitors:,}",
+        published_posts=f"{published_posts:,}",
+        engagement_rate=f"{engagement_rate:.1f}%",
+        views_last_24h=f"{views_last_24h:,}",
+        top_page=top_page,
+        avg_time_display=avg_time_display,
+        bounce_rate=f"{bounce_rate:.1f}%",
+        errors_today=f"{errors_today:,}",
+        uptime_percent=f"{uptime_percent:.2f}%",
+        uptime_seconds=uptime_seconds,
+        last_update=now.strftime('%H:%M')
+    )
+
+@app.route('/admin/posts/review')
+@login_required
+def admin_post_review():
+    if current_user.role != 'admin': return redirect(url_for('index'))
+    pending_posts = BlogPost.query.filter_by(status='pending').order_by(BlogPost.date_posted.desc()).all()
+    return render_template('admin_post_review.html', posts=pending_posts)
+
+@app.route('/admin/audit-log')
+@login_required
+def admin_audit_log():
+    if current_user.role != 'admin': return redirect(url_for('index'))
+    return render_template('admin_audit_log.html')
+
+@app.route('/admin/settings')
+@login_required
+def admin_settings():
+    if current_user.role != 'admin': return redirect(url_for('index'))
+    return render_template('admin_settings.html')
+
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
+
+@app.route('/terms')
+def terms():
+    return render_template('terms.html')
 
 # --- ✅ ADMIN REPORT ROUTES ---
 

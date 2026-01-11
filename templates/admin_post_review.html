@@ -100,12 +100,12 @@
   .grid{
     margin-top:12px;
     display:grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap:12px;
   }
   @media(max-width:1020px){ .grid{grid-template-columns:1fr} }
 
-  .cCard{
+  .reviewCard{
     background:var(--card);
     border:1px solid var(--border);
     border-radius:18px;
@@ -114,7 +114,15 @@
     min-width:0;
   }
 
-  .cBody{
+  .thumb{
+    width:100%;
+    height:120px;
+    background: rgba(15,23,42,0.06);
+  }
+  body[data-theme="dark"] .thumb{background: rgba(255,255,255,0.06)}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+
+  .body{
     padding:12px;
     display:flex;
     flex-direction:column;
@@ -122,13 +130,13 @@
     min-width:0;
   }
 
-  .commentText{
+  .rTitle{
     font-size:13px;
-    font-weight:500;
-    letter-spacing:-0.1px;
-    line-height:1.5;
+    font-weight:900;
+    letter-spacing:-0.2px;
+    line-height:1.35;
     display:-webkit-box;
-    -webkit-line-clamp:3;
+    -webkit-line-clamp:2;
     -webkit-box-orient:vertical;
     overflow:hidden;
   }
@@ -146,7 +154,7 @@
   .miniMeta{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
   .miniMeta svg{width:14px;height:14px;stroke-width:1.7}
 
-  .reason{
+  .excerpt{
     font-size:12px;
     font-weight:300;
     color:var(--muted);
@@ -202,8 +210,8 @@
   <section class="hero">
     <div class="heroTop">
       <div style="min-width:0">
-        <div class="title"><span data-lucide="message-square-warning"></span> Comment Reports</div>
-        <div class="sub">Reported comments list. Only actions: Reject / View Comment / Delete Comment.</div>
+        <div class="title"><span data-lucide="scan"></span> Post Review</div>
+        <div class="sub">Pending posts submitted by writers. Actions: View / Approve / Reject.</div>
       </div>
 
       <div class="chipRow">
@@ -212,46 +220,46 @@
     </div>
 
     <div class="filters">
-      <div class="countPill" title="Total comment-reports in list">
-        <span data-lucide="flag"></span>
-        <span id="totalCount">{{ items|length }}</span>
+      <div class="countPill" title="Total posts pending review">
+        <span data-lucide="file-text"></span>
+        <span id="totalCount">{{ posts|length }}</span>
         <span>items</span>
       </div>
 
-      <input class="searchInput" id="searchInput" type="search" placeholder="Search comment / user / reason…">
+      <input class="searchInput" id="searchInput" type="search" placeholder="Search title / writer / category…">
     </div>
   </section>
 
-  {% if items %}
-  <section class="grid" id="commentGrid">
-    {% for comment, count in items %}
-    <article class="cCard" data-search="{{ comment.content }} {{ comment.author.username }} {{ comment.post.title }} {{ count }}">
-      <div class="cBody">
-        <div class="commentText">{{ comment.content }}</div>
+  {% if posts %}
+  <section class="grid" id="reviewGrid">
+    {% for post in posts %}
+    <article class="reviewCard" data-search="{{ post.title }} {{ post.author.username }} {{ post.category }}">
+      <div class="thumb">
+        <img src="{{ url_for('static', filename='uploads/' + (post.thumbnail or 'default.jpg')) }}" alt="{{ post.title }}">
+      </div>
+
+      <div class="body">
+        <div class="rTitle">{{ post.title }}</div>
 
         <div class="oneLine">
-          <span class="miniMeta"><span data-lucide="user"></span><span>{{ comment.author.username }}</span></span>
-          <span class="miniMeta"><span data-lucide="calendar"></span><span>{{ comment.date_posted.strftime('%b %d, %Y') }}</span></span>
-          <span class="miniMeta"><span data-lucide="flag"></span><span>{{ count }} reports</span></span>
+          <span class="miniMeta"><span data-lucide="user"></span><span>{{ post.author.username }}</span></span>
+          <span class="miniMeta"><span data-lucide="calendar"></span><span>{{ post.date_posted.strftime('%b %d, %Y') }}</span></span>
+          <span class="miniMeta"><span data-lucide="tag"></span><span>{{ post.category }}</span></span>
         </div>
 
-        <div class="oneLine">
-          <span class="miniMeta"><span data-lucide="file-text"></span><span>{{ comment.post.title }}</span></span>
-        </div>
-
-        <div class="reason">Reported by {{ count }} users.</div>
+        <div class="excerpt">{{ post.excerpt[:120] }}...</div>
 
         <div class="actions">
-          <a class="actBtn" href="{{ url_for('post_detail', post_id=comment.post.id) }}">
-            <span data-lucide="external-link"></span> View Comment
+          <a class="actBtn" href="{{ url_for('post_detail', post_id=post.id) }}">
+            <span data-lucide="external-link"></span> View Post
           </a>
 
-          <a class="actBtn primary" href="{{ url_for('dismiss_comment_reports', id=comment.id) }}">
+          <a class="actBtn primary" href="{{ url_for('approve_post', id=post.id) }}">
+            <span data-lucide="check-circle"></span> Approve
+          </a>
+
+          <a class="actBtn danger" href="{{ url_for('reject_post', id=post.id) }}">
             <span data-lucide="x-circle"></span> Reject
-          </a>
-
-          <a class="actBtn danger" href="{{ url_for('delete_reported_comment', id=comment.id) }}">
-            <span data-lucide="trash-2"></span> Delete
           </a>
         </div>
       </div>
@@ -259,7 +267,7 @@
     {% endfor %}
   </section>
   {% else %}
-    <div class="sub" style="margin-top:12px;">No reports found.</div>
+    <div class="sub" style="margin-top:12px;">No pending posts right now.</div>
   {% endif %}
 </main>
 
@@ -268,7 +276,7 @@
 
   const searchInput = document.getElementById("searchInput");
   const totalCount = document.getElementById("totalCount");
-  const cards = Array.from(document.querySelectorAll("#commentGrid .cCard"));
+  const cards = Array.from(document.querySelectorAll("#reviewGrid .reviewCard"));
 
   if (searchInput) {
     searchInput.addEventListener("input", () => {

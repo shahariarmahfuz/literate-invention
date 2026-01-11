@@ -522,6 +522,8 @@
                   <span>{{ post.date_posted.strftime('%b %d') }}</span>
                   <span class="dotMini"></span>
                   <span>Read</span>
+                  <span class="dotMini"></span>
+                  <span>{{ latest_reading_times[post.id] }} min</span>
                 </div>
               </div>
             </a>
@@ -624,7 +626,7 @@
   <section class="topWriters">
     <div class="writersHeader">
       <div class="writersTitle">Top Writers</div>
-      <a class="writersViewAll" href="#">View all</a>
+      <a class="writersViewAll" href="{{ url_for('writers') }}">View all</a>
     </div>
 
     <div class="writerRow" id="writerRow">

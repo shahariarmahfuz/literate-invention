@@ -1,7 +1,36 @@
 {% extends layout %}
 
 {% block content %}
-<div class="container my-4">
+<style>
+    .allPostsWrap { max-width: 1080px; margin: 0 auto; }
+    .allPostsGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+    .latestCard {
+        background: #fff; border-radius: 18px; border: 1px solid #e2e8f0; overflow: hidden;
+        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06); transition: transform 0.2s;
+        display: flex; flex-direction: column; height: 100%;
+    }
+    .latestCard:hover { transform: translateY(-3px); }
+    .latestCard .thumb { position: relative; height: 180px; overflow: hidden; }
+    .latestCard .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .latestCard .content { padding: 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+    .latestCard .badgeRow { display: flex; gap: 8px; flex-wrap: wrap; }
+    .latestCard .badge { background: #f1f5f9; color: #0f172a; border-radius: 999px; padding: 4px 10px; font-size: 11px; font-weight: 600; }
+    .latestCard .title { font-size: 16px; font-weight: 700; color: #0f172a; margin: 0; }
+    .latestCard .excerpt { color: #64748b; font-size: 13px; margin: 0; }
+    .latestCard .metaRow { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: auto; }
+    .latestCard .author { font-weight: 600; font-size: 12px; color: #0f172a; }
+    .latestCard .subMeta { font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 6px; }
+    .latestCard .dotMini { width: 3px; height: 3px; border-radius: 50%; background: #94a3b8; display: inline-block; }
+    .latestCard .metaRight { display: flex; align-items: center; gap: 10px; }
+    .latestCard .comments { color: #64748b; font-size: 12px; display: flex; align-items: center; gap: 4px; }
+    .latestCard .bookmarkBtn { border: none; background: transparent; cursor: pointer; }
+    .thumb .imageShimmer { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(226,232,240,0.2), rgba(226,232,240,0.6), rgba(226,232,240,0.2)); animation: shimmer 1.4s infinite; }
+    .thumb.is-loaded .imageShimmer { display: none; }
+    @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+    @media(max-width: 768px){ .latestCard .thumb { height: 160px; } }
+</style>
+
+<div class="container my-4 allPostsWrap">
     <div class="d-flex align-items-center justify-content-between mb-4">
         <h3 class="fw-bold m-0 text-dark">
             <i data-lucide="layers" style="width: 24px;"></i> All Articles
@@ -9,46 +38,73 @@
         <span class="text-muted small">Showing Page {{ pagination.page }} of {{ pagination.pages }}</span>
     </div>
 
-    <div class="row">
+    <div class="allPostsGrid">
         {% for post in pagination.items %}
-        <div class="col-md-4 mb-4">
-            <div class="card h-100 border-0 shadow-sm" style="border-radius: 16px; transition: transform 0.2s;">
-                {% if post.thumbnail %}
-                <div style="position: relative;">
-                    <img src="{{ url_for('static', filename='uploads/' + post.thumbnail) }}" class="card-img-top" style="height: 200px; object-fit: cover; border-top-left-radius: 16px; border-top-right-radius: 16px;">
-                    <span class="badge bg-white text-dark shadow-sm position-absolute top-0 start-0 m-3">{{ post.category }}</span>
+        <article class="latestCard">
+            <a href="{{ url_for('post_detail', post_id=post.id) }}" style="text-decoration:none; color:inherit;">
+                <div class="thumb imgBox is-loading" data-imgbox>
+                    {% if post.thumbnail %}
+                        <img data-smartimg loading="lazy" src="{{ url_for('static', filename='uploads/' + post.thumbnail) }}" alt="{{ post.title }}">
+                    {% else %}
+                        <img data-smartimg loading="lazy" src="https://picsum.photos/900/520?random={{ post.id }}" alt="Default">
+                    {% endif %}
+                    <div class="imageShimmer"></div>
                 </div>
-                {% endif %}
+            </a>
 
-                <div class="card-body">
-                    <a href="{{ url_for('post_detail', post_id=post.id) }}" class="text-decoration-none text-dark">
-                        <h5 class="card-title fw-bold mb-2">{{ post.title }}</h5>
-                    </a>
-                    <p class="card-text text-muted small" style="line-height: 1.6;">{{ post.excerpt[:90] }}...</p>
+            <div class="content">
+                <div class="badgeRow">
+                    <span class="badge">Latest</span>
+                    <span class="badge">{{ post.category }}</span>
                 </div>
 
-                <div class="card-footer bg-white border-0 pt-0 pb-3 d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center gap-2">
-                        <img src="{{ url_for('static', filename='uploads/' + post.author.profile_pic) }}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;">
-                        <small class="text-muted fw-bold">
-                            <a href="{{ url_for('public_profile', username=post.author.username) }}" class="text-muted text-decoration-none">{{ post.author.username }}</a>
-                        </small>
+                <a href="{{ url_for('post_detail', post_id=post.id) }}" style="text-decoration:none; color:inherit;">
+                    <h3 class="title">{{ post.title }}</h3>
+                </a>
+
+                <p class="excerpt">{{ post.excerpt[:120] }}...</p>
+
+                <div class="metaRow">
+                    <div class="metaLeft">
+                        <a href="{{ url_for('public_profile', username=post.author.username) }}"
+                           style="text-decoration:none; display:flex; align-items:center; gap:8px;">
+                            <div class="avatar imgBox is-loading" style="width:28px;height:28px;border-radius:50%" data-imgbox>
+                                <img data-smartimg loading="lazy" src="{{ url_for('static', filename='uploads/' + post.author.profile_pic) }}" alt="{{ post.author.username }}">
+                                <div class="imageShimmer"></div>
+                            </div>
+                            <div>
+                                <div class="author">{{ post.author.username }}</div>
+                                <div class="subMeta">
+                                    <span>{{ post.date_posted.strftime('%b %d') }}</span>
+                                    <span class="dotMini"></span>
+                                    <span>Read</span>
+                                    <span class="dotMini"></span>
+                                    <span>{{ reading_times[post.id] }} min</span>
+                                </div>
+                            </div>
+                        </a>
                     </div>
 
-                    <div class="d-flex gap-2">
-                        <a href="{{ url_for('post_detail', post_id=post.id) }}" class="btn btn-sm btn-outline-secondary rounded-pill">Read</a>
+                    <div class="metaRight">
+                        <div class="comments"><i class="fa-regular fa-comment"></i><span>{{ post.comments|length }}</span></div>
 
                         {% if current_user.is_authenticated %}
-                        <button class="btn btn-sm btn-light border rounded-circle" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="toggleBookmark({{ post.id }}, this)">
-                            <i data-lucide="bookmark" style="width: 14px;" class="{{ 'fill-primary text-primary' if current_user in post.bookmarked_by else 'text-secondary' }}"></i>
-                        </button>
+                            <button class="bookmarkBtn" type="button" aria-label="Bookmark"
+                                    onclick="toggleBookmark({{ post.id }}, this)">
+                                <i class="{{ 'fa-solid fa-bookmark' if current_user in post.bookmarked_by else 'fa-regular fa-bookmark' }}"
+                                   style="{{ 'color: #0d6efd;' if current_user in post.bookmarked_by else '' }}"></i>
+                            </button>
+                        {% else %}
+                            <a href="{{ url_for('login') }}" class="bookmarkBtn" aria-label="Login to bookmark">
+                                <i class="fa-regular fa-bookmark"></i>
+                            </a>
                         {% endif %}
                     </div>
                 </div>
             </div>
-        </div>
+        </article>
         {% else %}
-        <div class="col-12 text-center py-5">
+        <div class="text-center py-5">
             <p class="text-muted display-6">No posts found yet.</p>
         </div>
         {% endfor %}
@@ -90,5 +146,34 @@
 
 <script>
     lucide.createIcons();
+
+    function initSmartImages(){
+        const imgs = document.querySelectorAll("img[data-smartimg]");
+        imgs.forEach(img => {
+            const box = img.closest("[data-imgbox]");
+            if (box) { box.classList.add("is-loading"); box.classList.remove("is-loaded"); }
+
+            if (img.complete && img.naturalWidth > 0) {
+                if (box) { box.classList.remove("is-loading"); box.classList.add("is-loaded"); }
+                return;
+            }
+
+            const done = () => {
+                if (!box) return;
+                box.classList.remove("is-loading");
+                box.classList.add("is-loaded");
+            };
+
+            img.addEventListener("load", done, { once:true });
+            img.addEventListener("error", () => {
+                if (!box) return;
+                box.classList.remove("is-loading");
+                box.classList.add("is-loaded");
+                img.style.opacity = "0";
+            }, { once:true });
+        });
+    }
+
+    initSmartImages();
 </script>
 {% endblock %}
