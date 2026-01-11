@@ -300,10 +300,32 @@ def post_detail(post_id):
 @app.route('/u/<username>')
 def public_profile(username):
     user = User.query.filter_by(username=username).first_or_404()
+    page = request.args.get('page', 1, type=int)
     posts = []
+    total_posts = 0
+    total_pages = 1
     if user.role == 'writer':
-        posts = BlogPost.query.filter_by(author_id=user.id, status='active').order_by(BlogPost.date_posted.desc()).all()
-    return render_template('public_profile.html', user=user, posts=posts)
+        base_query = BlogPost.query.filter_by(author_id=user.id, status='active').order_by(BlogPost.date_posted.desc())
+        total_posts = base_query.count()
+        if total_posts > 5:
+            total_pages = 1 + ((total_posts - 5 + 9) // 10)
+        page = max(1, min(page, total_pages))
+        if page == 1:
+            posts = base_query.limit(5).all()
+        else:
+            offset = 5 + (page - 2) * 10
+            posts = base_query.offset(offset).limit(10).all()
+    reading_times = {post.id: estimate_reading_time(post.content) for post in posts}
+    hobbies = [h.strip() for h in (user.hobbies or '').split(',') if h.strip()]
+    categories = []
+    seen = set()
+    for post in posts:
+        if post.category and post.category not in seen:
+            seen.add(post.category)
+            categories.append(post.category)
+        if len(categories) == 3:
+            break
+    return render_template('public_profile.html', user=user, posts=posts, reading_times=reading_times, hobbies=hobbies, categories=categories, page=page, total_pages=total_pages)
 
 @app.route('/post/<int:post_id>/comment', methods=['POST'])
 @login_required
